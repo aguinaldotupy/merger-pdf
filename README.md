@@ -1,72 +1,106 @@
-# Merger PDF
+# PDF Merger API
 
-Este projeto é um servidor Express que permite mesclar múltiplos arquivos PDF em um único documento PDF.
+This project is a Node.js application that provides an API to merge multiple PDF files into a single PDF. It uses Express for handling HTTP requests and pdf-lib for PDF manipulation.
 
-## Pré-requisitos
+## Features
 
-- Node.js (versão 20 ou superior)
-- npm (geralmente incluído com o Node.js)
+- Merge multiple PDF files into a single PDF.
+- Set metadata such as title, author, subject, and keywords for the merged PDF.
+- Download the merged PDF directly from the API.
 
-## Instalação
+## Prerequisites
 
-1. Clone o repositório:
+- Node.js (version 14 or higher)
+- npm or yarn
+
+## Installation
+
+1. Clone the repository:
 
    ```bash
-   git clone https://github.com/seu-usuario/merger-pdf.git
-   cd merger-pdf
+   git clone https://github.com/yourusername/pdf-merger-api.git
+   cd pdf-merger-api
    ```
 
-2. Instale as dependências:
+2. Install the dependencies:
 
    ```bash
    npm install
    ```
 
-## Scripts Disponíveis
+   or
 
-- `npm start`: Inicia o servidor em modo de desenvolvimento usando `ts-node`.
-- `npm run build`: Compila o código TypeScript para JavaScript.
-- `npm run serve`: Inicia o servidor a partir do código compilado na pasta `dist`.
+   ```bash
+   yarn install
+   ```
 
-## Uso
+## Usage
 
-1. Inicie o servidor:
+1. Start the server:
 
    ```bash
    npm start
    ```
 
-2. Faça uma solicitação POST para a rota `/` com um corpo JSON contendo `title` e `sources` (uma lista de URLs de arquivos PDF):
-
-   ```json
-   {
-     "title": "nome-do-arquivo",
-     "sources": [
-       "https://exemplo.com/arquivo1.pdf",
-       "https://exemplo.com/arquivo2.pdf"
-     ]
-   }
-   ```
-
-3. Acesse a rota de verificação de saúde para garantir que o servidor está funcionando:
+   or
 
    ```bash
-   curl http://localhost:3000/health
+   yarn start
    ```
 
-## Estrutura do Projeto
+2. The server will run on port 3000 by default. You can access the API at `http://localhost:3000`.
 
-- `src/`: Contém o código fonte do servidor.
-- `dist/`: Contém o código compilado (após rodar `npm run build`).
+### API Endpoints
 
-## Contribuição
+#### POST /
 
-1. Faça um fork do projeto.
-2. Crie uma nova branch (`git checkout -b feature/nova-feature`).
-3. Faça commit das suas alterações (`git commit -am 'Adiciona nova feature'`).
-4. Faça push para a branch (`git push origin feature/nova-feature`).
-5. Abra um Pull Request.
+Merge multiple PDF files.
 
-## Licença
+- **Request Body**: JSON object with the following fields:
+  - `title` (string): Title of the merged PDF.
+  - `author` (string, optional): Author of the merged PDF.
+  - `subject` (string, optional): Subject of the merged PDF.
+  - `keywords` (array of strings, optional): Keywords for the merged PDF.
+  - `sources` (array of strings): URLs of the PDF files to merge.
 
-Este projeto está licenciado sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes. 
+- **Response**: The merged PDF file.
+
+**Example Request with `curl`:**
+
+```bash
+curl -X POST http://localhost:3000/ \
+-H "Content-Type: application/json" \
+-d '{
+  "title": "merged-document",
+  "author": "John Doe",
+  "subject": "Merged PDF",
+  "keywords": ["pdf", "merge", "example"],
+  "sources": [
+    "https://example.com/file1.pdf",
+    "https://example.com/file2.pdf"
+  ]
+}'
+```
+
+#### GET /health
+
+Check the health status of the server.
+
+- **Response**: A simple message indicating the server is healthy.
+
+## Error Handling
+
+- The API returns a 400 status code for invalid request bodies.
+- A 500 status code is returned for internal server errors.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
+
+## Contact
+
+For questions or support, please contact [your-email@example.com](mailto:your-email@example.com). 
