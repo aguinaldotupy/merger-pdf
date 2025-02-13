@@ -12,11 +12,14 @@ const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
 interface MergeRequest {
     title: string;
+    author: string | null;
+    subject: string | null;
+    keywords: string[] | null;
     sources: string[];
 }
 
 app.post('/', async (req: Request, res: Response) => {
-    const { title, sources } = req.body as MergeRequest;
+    const { title, sources, author, subject, keywords } = req.body as MergeRequest;
 
     if (!title || !sources || !Array.isArray(sources)) {
         return res.status(400).send('Invalid request body');
@@ -26,16 +29,33 @@ app.post('/', async (req: Request, res: Response) => {
         // Download all PDFs in parallel
         const pdfBuffers = await Promise.all(
             sources.map(async (source) => {
-                const response = await axios.get(source, {
-                    responseType: 'arraybuffer',
-                    httpsAgent // Adiciona o agente HTTPS para ignorar a verificação de certificados
-                });
-                return response.data;
+                try {
+                    const response = await axios.get(source, {
+                        responseType: 'arraybuffer',
+                        httpsAgent // Adiciona o agente HTTPS para ignorar a verificação de certificados
+                    });
+                    return response.data;
+                } catch (error) {
+                    console.error(`Error downloading PDF from ${source}:`, error);
+                    throw new Error(`Failed to download PDF from ${source}`);
+                }
             })
         );
 
         // Create a new PDF document
         const mergedPdf = await PDFDocument.create();
+        mergedPdf.setTitle(title);
+        if (author) {
+            mergedPdf.setAuthor(author);
+        }
+
+        if (subject) {
+            mergedPdf.setSubject(subject);
+        }
+
+        if (keywords && Array.isArray(keywords) && keywords.length > 0) {
+            mergedPdf.setKeywords(keywords);
+        }
 
         // Merge all PDFs
         for (const pdfBuffer of pdfBuffers) {
