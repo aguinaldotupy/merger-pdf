@@ -32,12 +32,13 @@ app.post('/', async (req: Request, res: Response) => {
                 try {
                     const response = await axios.get(source, {
                         responseType: 'arraybuffer',
-                        httpsAgent // Adiciona o agente HTTPS para ignorar a verificação de certificados
+                        httpsAgent,
+                        timeout: 10000,
                     });
                     return response.data;
                 } catch (error) {
                     console.error(`Error downloading PDF from ${source}:`, error);
-                    throw new Error(`Failed to download PDF from ${source}`);
+                    //throw new Error(`Failed to download PDF from ${source}`);
                 }
             })
         );
@@ -73,7 +74,7 @@ app.post('/', async (req: Request, res: Response) => {
         res.download(outputPath, `${title}.pdf`, (err) => {
             if (err) {
                 console.error('Error sending file:', err);
-                res.status(500).send('Error sending file');
+                res.status(500).send({ message: 'Error sending file', error: err });
             }
 
             // Clean up the file after sending
@@ -81,7 +82,7 @@ app.post('/', async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Error:', error);
-        res.status(500).send('Internal Server Error');
+        res.status(500).send({ message: 'Internal Server Error', error: error });
     }
 });
 
