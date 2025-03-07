@@ -3,6 +3,7 @@ name: Code Review GPT
 on:
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   pull-requests: write
@@ -13,21 +14,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: oven-sh/setup-bun@v2
+      - name: Code Review GPT
+        uses: mattzcarey/code-review-gpt@v0.8.0
         with:
-          bun-version: latest
-
-      - name: Install code-review-gpt
-        run: bun i code-review-gpt
-
-      - name: Run code review script
-        run: bun code-review-gpt review --ci=github
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MODEL: "gpt-4o"
+          REVIEW_LANGUAGE: "English"
