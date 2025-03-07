@@ -11,4 +11,7 @@
         "quickfix.biome": "explicit",
         "source.organizeImports.biome": "explicit"
     },
+    "[github-actions-workflow]": {
+        "editor.defaultFormatter": "biomejs.biome"
+    },
 }
