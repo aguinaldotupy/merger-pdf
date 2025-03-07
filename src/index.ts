@@ -93,7 +93,7 @@ app.post("/", async (req: Request, res: Response) => {
 
 		// Save the merged PDF to a file
 		const mergedPdfBytes = await mergedPdf.save();
-		const filename = toSlug(`${uuidv4()}-${title}.pdf`);
+		const filename = `${toSlug(`${uuidv4()}`)}.pdf`;
 		const outputPath = path.join(__dirname, filename);
 
 		fs.writeFileSync(outputPath, mergedPdfBytes);
