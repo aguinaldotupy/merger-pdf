@@ -1,0 +1,255 @@
+openapi: 3.0.3
+info:
+  title: Dashboard Authentication
+  description: Authentication specification for PDF Analytics Dashboard
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+  - url: https://your-domain.com
+    description: Production server
+
+paths:
+  /dashboard:
+    get:
+      summary: Access analytics dashboard
+      description: Serves the React-based analytics dashboard (requires authentication)
+      tags:
+        - Dashboard
+      security:
+        - ApiToken: []
+      responses:
+        '200':
+          description: Dashboard HTML page
+          content:
+            text/html:
+              schema:
+                type: string
+                example: <!DOCTYPE html><html>...</html>
+        '401':
+          description: Authentication required
+          content:
+            text/html:
+              schema:
+                type: string
+                example: <!DOCTYPE html><html><body><h1>401 Unauthorized</h1>...</body></html>
+
+  /dashboard/assets/{asset}:
+    get:
+      summary: Serve dashboard static assets
+      description: Serves JavaScript, CSS, and other static files for the dashboard
+      tags:
+        - Dashboard
+      security:
+        - {} # No authentication for static assets (served after HTML auth check)
+      parameters:
+        - name: asset
+          in: path
+          required: true
+          description: Asset filename
+          schema:
+            type: string
+            example: main.js
+      responses:
+        '200':
+          description: Static asset file
+          content:
+            application/javascript:
+              schema:
+                type: string
+            text/css:
+              schema:
+                type: string
+            image/*:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Asset not found
+
+components:
+  securitySchemes:
+    ApiToken:
+      type: apiKey
+      in: header
+      name: X-API-Token
+      description: |
+        API token for dashboard authentication.
+
+        Token Configuration:
+        - Set via environment variable: ANALYTICS_API_TOKEN
+        - Generate strong token: `openssl rand -hex 32`
+        - Minimum length: 32 characters
+        - Recommended: Alphanumeric + symbols
+        - Store in .env file (never commit to git)
+
+        Usage:
+        - Include in all dashboard and API requests
+        - Header format: `X-API-Token: your-token-here`
+        - Frontend stores token in memory (not localStorage)
+
+        Token Rotation:
+        1. Generate new token
+        2. Update ANALYTICS_API_TOKEN in environment
+        3. Restart application
+        4. Distribute new token to administrators
+
+  schemas:
+    AuthenticationError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Authentication required
+        message:
+          type: string
+          example: Please provide a valid X-API-Token header
+
+tags:
+  - name: Dashboard
+    description: Frontend dashboard access and assets
+
+# Authentication Flow Documentation
+x-authentication-flow: |
+  ## Authentication Flow
+
+  ### Initial Access (No Token)
+  1. User navigates to /dashboard
+  2. Server checks for X-API-Token header
+  3. If missing → Return 401 with authentication prompt
+  4. User provides token via prompt or custom login page
+  5. Frontend stores token in memory
+  6. All subsequent requests include token in header
+
+  ### Token Validation
+  1. Server extracts X-API-Token from request header
+  2. Compare against ANALYTICS_API_TOKEN environment variable
+  3. If match → Allow access
+  4. If mismatch or missing → Return 401
+
+  ### Session Management
+  - Token stored in React component state (memory only)
+  - Token re-sent with every API request
+  - No server-side session storage required
+  - Token valid until environment variable changed
+
+  ### Security Considerations
+  - Token transmitted in HTTPS only (production)
+  - No token in URLs or localStorage (XSS protection)
+  - No cookies (CSRF protection unnecessary)
+  - Token rotation requires server restart
+
+  ## Implementation Examples
+
+  ### Frontend (React)
+  ```typescript
+  // Login component
+  const [token, setToken] = useState<string>('');
+
+  const login = () => {
+    // Store token in component state
+    setToken(userInput);
+    // All API calls use this token
+  };
+
+  // API client
+  const fetchAnalytics = async () => {
+    const response = await fetch('/api/analytics/overview', {
+      headers: {
+        'X-API-Token': token
+      }
+    });
+    return response.json();
+  };
+  ```
+
+  ### Backend (Express Middleware)
+  ```typescript
+  const authMiddleware = (req, res, next) => {
+    const token = req.headers['x-api-token'];
+    const validToken = process.env.ANALYTICS_API_TOKEN;
+
+    if (!token || token !== validToken) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required'
+      });
+    }
+
+    next();
+  };
+
+  // Apply to dashboard routes
+  app.get('/dashboard', authMiddleware, serveDashboard);
+  app.get('/api/analytics/*', authMiddleware, analyticsRoutes);
+  ```
+
+  ## Token Generation
+
+  ### Strong Token Generation
+  ```bash
+  # Generate 32-byte hex token (64 characters)
+  openssl rand -hex 32
+
+  # Alternative: Node.js
+  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+  # Alternative: Bun
+  bun -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  ```
+
+  ### Environment Configuration
+  ```env
+  # .env file
+  ANALYTICS_API_TOKEN=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6
+  ```
+
+  ### Validation Rules
+  - Minimum length: 32 characters
+  - Maximum length: 256 characters
+  - Allowed characters: Alphanumeric (a-z, A-Z, 0-9) and symbols
+  - No whitespace or control characters
+
+  ## Error Responses
+
+  ### Missing Token
+  ```http
+  HTTP/1.1 401 Unauthorized
+  Content-Type: application/json
+
+  {
+    "success": false,
+    "error": "Authentication required. Please provide X-API-Token header."
+  }
+  ```
+
+  ### Invalid Token
+  ```http
+  HTTP/1.1 401 Unauthorized
+  Content-Type: application/json
+
+  {
+    "success": false,
+    "error": "Invalid authentication token."
+  }
+  ```
+
+  ## Testing Authentication
+
+  ### Valid Request
+  ```bash
+  curl -H "X-API-Token: your-token-here" http://localhost:3000/api/analytics/overview
+  ```
+
+  ### Invalid Request (No Token)
+  ```bash
+  curl http://localhost:3000/api/analytics/overview
+  # Expected: 401 Unauthorized
+  ```
+
+  ### Invalid Request (Wrong Token)
+  ```bash
+  curl -H "X-API-Token: wrong-token" http://localhost:3000/api/analytics/overview
+  # Expected: 401 Unauthorized
+  ```

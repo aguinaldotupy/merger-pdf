@@ -1,0 +1,28 @@
+// Prisma schema for PDF Download Analytics
+// Default: SQLite
+// To use PostgreSQL or MySQL, change the provider below and run: bun run prisma:migrate
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = env("DATABASE_PROVIDER")
+  url      = env("DATABASE_URL")
+}
+
+model DownloadEvent {
+  id            String   @id @default(uuid())
+  url           String
+  statusCode    Int
+  timestamp     DateTime @default(now())
+  userAgent     String?
+  responseTime  Int?
+  errorMessage  String?
+
+  @@index([statusCode])
+  @@index([url])
+  @@index([statusCode, timestamp])
+  @@index([timestamp])
+  @@map("download_events")
+}

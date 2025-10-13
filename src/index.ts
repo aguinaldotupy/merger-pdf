@@ -1,12 +1,21 @@
 import fs from "node:fs";
 import path from "node:path";
+import axios from "axios";
 import express from "express";
 import type { Application, Request, Response } from "express";
 import { PDFMerger } from "./pdf-merger";
 import { toSlug, uuidv4 } from "./utils";
+import dashboardRoutes from "./dashboard/routes";
+import { AnalyticsService } from "./analytics/service";
 
 const app: Application = express();
 app.use(express.json());
+
+// Initialize analytics service
+const analyticsService = new AnalyticsService();
+
+// Register analytics dashboard routes
+app.use("/api/analytics", dashboardRoutes);
 
 interface MergeRequest {
 	title: string;
@@ -36,36 +45,54 @@ app.post("/", async (req: Request, res: Response) => {
 			keywords: keywords || undefined,
 		});
 
-		// Download all PDFs in parallel while maintaining order
-		const pdfBuffers = await Promise.all(
-			sources.map(async (source, index) => {
+		// Download and add all PDFs with analytics tracking
+		await Promise.all(
+			sources.map(async (source) => {
+				const startTime = Date.now();
 				try {
-					const response = await fetch(source);
-					if (!response.ok) {
-						throw new Error(`HTTP error! status: ${response.status}`);
-					}
-					const arrayBuffer = await response.arrayBuffer();
-					return { buffer: Buffer.from(arrayBuffer), index, source };
+					// Use PDFMerger's built-in download method (with axios, timeout, etc.)
+					await merger.addPdfFromUrl(source);
+
+					// Record successful download analytics
+					const responseTime = Date.now() - startTime;
+					analyticsService
+						.recordDownloadEvent({
+							url: source,
+							statusCode: 200, // Success
+							timestamp: new Date(),
+							userAgent: req.get("user-agent"),
+							responseTime,
+						})
+						.catch((error) => {
+							console.error("Analytics recording failed:", error);
+						});
 				} catch (error) {
+					// Record failed download analytics
+					const responseTime = Date.now() - startTime;
+					const statusCode = axios.isAxiosError(error)
+						? error.response?.status || 500
+						: 500;
+					const errorMessage =
+						error instanceof Error ? error.message : "Unknown error";
+
+					analyticsService
+						.recordDownloadEvent({
+							url: source,
+							statusCode,
+							timestamp: new Date(),
+							userAgent: req.get("user-agent"),
+							responseTime,
+							errorMessage,
+						})
+						.catch((analyticsError) => {
+							console.error("Analytics recording failed:", analyticsError);
+						});
+
 					console.error(`Error downloading PDF from ${source}:`, error);
-					return null;
+					// Continue with other PDFs even if one fails
 				}
 			}),
 		);
-
-		// Add PDFs to merger in the original order, skipping failed downloads
-		for (const result of pdfBuffers) {
-			if (result !== null) {
-				try {
-					await merger.addPdfFromBuffer(result.buffer);
-				} catch (error) {
-					console.error(
-						`Error adding PDF from ${result.source} to merger:`,
-						error,
-					);
-				}
-			}
-		}
 
 		// Save the merged PDF to a file
 		const uuid = uuidv4();
@@ -93,6 +120,14 @@ app.post("/", async (req: Request, res: Response) => {
 app.get("/health", (req: Request, res: Response) => {
 	res.status(200).send("Server is healthy");
 });
+
+// Serve dashboard UI static files
+const dashboardPath = path.join(__dirname, "../src/dashboard-ui");
+if (fs.existsSync(dashboardPath)) {
+	app.use("/dashboard", express.static(dashboardPath, { index: "index.html" }));
+} else {
+	console.warn("Dashboard UI not found at src/dashboard-ui");
+}
 
 const PORT = process.env.PORT || 3000;
 
