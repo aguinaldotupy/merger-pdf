@@ -1,9 +1,8 @@
-import fs from "node:fs";
-import https from "node:https";
-import axios from "axios";
-import process from "node:process";
-
-import { PDFDocument } from "pdf-lib";
+import axios from 'axios';
+import fs from 'node:fs';
+import https from 'node:https';
+import process from 'node:process';
+import { PDFDocument } from 'pdf-lib';
 
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
@@ -112,7 +111,7 @@ export class PDFMerger {
 		const TIMEOUT = process.env.REQUEST_TIMEOUT;
 
 		if (TIMEOUT) {
-			const parsed = parseInt(TIMEOUT, 10);
+			const parsed = Number.parseInt(TIMEOUT, 10);
 			if (!isNaN(parsed) && parsed > 0) {
 				return parsed;
 			}
