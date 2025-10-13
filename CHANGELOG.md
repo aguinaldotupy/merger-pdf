@@ -1,3 +1,13 @@
+# [2.0.0](https://github.com/aguinaldotupy/merger-pdf/compare/v1.0.2...v2.0.0) (2025-10-13)
+
+
+* feat!: upgrade to version 3.0.0 ([1fe642a](https://github.com/aguinaldotupy/merger-pdf/commit/1fe642a320c68f439379a195620b31de5d60b213))
+
+
+### BREAKING CHANGES
+
+* Major version update to 3.0.0 with architectural improvements and enhanced CI/CD pipeline. This version includes fixes to the GitHub Actions workflow to properly trigger semantic-release on push events.
+
 # [3.0.0](https://github.com/aguinaldotupy/merger-pdf/compare/v1.0.2...v3.0.0) (2025-10-13)
 
 
