@@ -6,7 +6,8 @@ let prisma: PrismaClient;
 export function getPrismaClient(): PrismaClient {
 	if (!prisma) {
 		prisma = new PrismaClient({
-			log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+			log:
+				process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
 		});
 
 		// Enable WAL mode for better concurrency

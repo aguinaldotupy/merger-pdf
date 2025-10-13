@@ -1,6 +1,6 @@
-import express, { type Request, type Response, Router } from "express";
-import { authMiddleware } from "./auth-middleware";
+import express, { type Request, type Response, type Router } from "express";
 import { AnalyticsService } from "../analytics/service";
+import { authMiddleware } from "./auth-middleware";
 
 const router: Router = express.Router();
 const analyticsService = new AnalyticsService();
@@ -78,7 +78,10 @@ router.get("/overview", async (req: Request, res: Response) => {
  */
 router.get("/top-urls", async (req: Request, res: Response) => {
 	try {
-		const limit = Math.min(Number.parseInt(req.query.limit as string, 10) || 25, 1000);
+		const limit = Math.min(
+			Number.parseInt(req.query.limit as string, 10) || 25,
+			1000,
+		);
 
 		const topUrls = await analyticsService.getTopUrls(limit);
 
@@ -107,7 +110,10 @@ router.get("/top-urls", async (req: Request, res: Response) => {
  */
 router.get("/errors", async (req: Request, res: Response) => {
 	try {
-		const limit = Math.min(Number.parseInt(req.query.limit as string, 10) || 50, 1000);
+		const limit = Math.min(
+			Number.parseInt(req.query.limit as string, 10) || 50,
+			1000,
+		);
 		const groupBy = (req.query.groupBy as string) === "url";
 
 		const errors = await analyticsService.getErrors(limit, groupBy);

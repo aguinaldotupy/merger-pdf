@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from "express";
+import type { NextFunction, Request, Response } from "express";
 
 // Default development token (insecure - change in production!)
 const DEFAULT_DEV_TOKEN = "dev-token-change-me-in-production-min32chars";
@@ -12,8 +12,13 @@ export function authMiddleware(
 	const validToken = process.env.ANALYTICS_API_TOKEN || DEFAULT_DEV_TOKEN;
 
 	// Warn if using default token in production
-	if (validToken === DEFAULT_DEV_TOKEN && process.env.NODE_ENV === "production") {
-		console.warn("⚠️  WARNING: Using default development token in production! Set ANALYTICS_API_TOKEN environment variable.");
+	if (
+		validToken === DEFAULT_DEV_TOKEN &&
+		process.env.NODE_ENV === "production"
+	) {
+		console.warn(
+			"⚠️  WARNING: Using default development token in production! Set ANALYTICS_API_TOKEN environment variable.",
+		);
 	}
 
 	// Validate token length (minimum 32 characters for security)
