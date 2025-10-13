@@ -1,8 +1,8 @@
-import axios from 'axios';
-import fs from 'node:fs';
-import https from 'node:https';
-import process from 'node:process';
-import { PDFDocument } from 'pdf-lib';
+import fs from "node:fs";
+import https from "node:https";
+import process from "node:process";
+import axios from "axios";
+import { PDFDocument } from "pdf-lib";
 
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
@@ -78,9 +78,7 @@ export class PDFMerger {
 	/**
 	 * Adds PDF from buffer
 	 */
-	private async addPdfFromBuffer(
-		buffer: ArrayBuffer | Uint8Array,
-	): Promise<void> {
+	async addPdfFromBuffer(buffer: ArrayBuffer | Uint8Array): Promise<void> {
 		const pdfDoc = await PDFDocument.load(buffer);
 		const pages = await this.mergedPdf.copyPages(
 			pdfDoc,
@@ -112,7 +110,7 @@ export class PDFMerger {
 
 		if (TIMEOUT) {
 			const parsed = Number.parseInt(TIMEOUT, 10);
-			if (!isNaN(parsed) && parsed > 0) {
+			if (!Number.isNaN(parsed) && parsed > 0) {
 				return parsed;
 			}
 		}

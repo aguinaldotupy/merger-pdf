@@ -36,17 +36,36 @@ app.post("/", async (req: Request, res: Response) => {
 			keywords: keywords || undefined,
 		});
 
-		// Add all PDFs from URLs
-		await Promise.all(
-			sources.map(async (source) => {
+		// Download all PDFs in parallel while maintaining order
+		const pdfBuffers = await Promise.all(
+			sources.map(async (source, index) => {
 				try {
-					await merger.addPdfFromUrl(source);
+					const response = await fetch(source);
+					if (!response.ok) {
+						throw new Error(`HTTP error! status: ${response.status}`);
+					}
+					const arrayBuffer = await response.arrayBuffer();
+					return { buffer: Buffer.from(arrayBuffer), index, source };
 				} catch (error) {
-					console.error(`Error adding PDF from ${source}:`, error);
-					// Continue with other PDFs even if one fails
+					console.error(`Error downloading PDF from ${source}:`, error);
+					return null;
 				}
 			}),
 		);
+
+		// Add PDFs to merger in the original order, skipping failed downloads
+		for (const result of pdfBuffers) {
+			if (result !== null) {
+				try {
+					await merger.addPdfFromBuffer(result.buffer);
+				} catch (error) {
+					console.error(
+						`Error adding PDF from ${result.source} to merger:`,
+						error,
+					);
+				}
+			}
+		}
 
 		// Save the merged PDF to a file
 		const uuid = uuidv4();
