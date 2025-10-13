@@ -1,5 +1,7 @@
 FROM node:23.7-alpine3.21
 
+ENV REQUEST_TIMEOUT=30000
+
 WORKDIR /app
 
 COPY package.json yarn.lock ./
