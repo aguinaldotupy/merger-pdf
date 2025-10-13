@@ -1,6 +1,6 @@
 # PDF Merger API
 
-This project is a Node.js application that provides an API to merge multiple PDF files into a single PDF. It uses Express for handling HTTP requests and pdf-lib for PDF manipulation.
+This project is a Bun application that provides an API to merge multiple PDF files into a single PDF. It uses Express for handling HTTP requests and pdf-lib for PDF manipulation.
 
 ## Features
 
@@ -10,8 +10,7 @@ This project is a Node.js application that provides an API to merge multiple PDF
 
 ## Prerequisites
 
-- Node.js (version 14 or higher)
-- npm or yarn
+- [Bun](https://bun.sh) (version 1.0 or higher)
 
 ## Installation
 
@@ -25,13 +24,7 @@ This project is a Node.js application that provides an API to merge multiple PDF
 2. Install the dependencies:
 
    ```bash
-   npm install
-   ```
-
-   or
-
-   ```bash
-   yarn install
+   bun install
    ```
 
 ## Usage
@@ -39,13 +32,7 @@ This project is a Node.js application that provides an API to merge multiple PDF
 1. Start the server:
 
    ```bash
-   npm start
-   ```
-
-   or
-
-   ```bash
-   yarn start
+   bun start
    ```
 
 2. The server will run on port 3000 by default. You can access the API at `http://localhost:3000`.
@@ -94,14 +81,14 @@ The project includes a command-line interface for merging PDFs directly from you
 
 ### Running the CLI
 
-#### Using Node.js directly:
+#### Using Bun directly:
 
 ```bash
 # Build the project first
-yarn build
+bun run build
 
 # Run the CLI
-yarn cli <input_file_or_directory> [output.pdf]
+bun cli <input_file_or_directory> [output.pdf]
 ```
 
 #### Using Docker:
@@ -119,8 +106,8 @@ docker run -v $(pwd):/data merger-pdf merge-pdf /data/input /data/output.pdf
 **Merge all PDFs in a directory:**
 
 ```bash
-# Using Node.js
-yarn cli ./pdfs merged-output.pdf
+# Using Bun
+bun cli ./pdfs merged-output.pdf
 
 # Using Docker
 docker run -v $(pwd):/data merger-pdf merge-pdf /data/pdfs /data/merged-output.pdf
@@ -129,8 +116,8 @@ docker run -v $(pwd):/data merger-pdf merge-pdf /data/pdfs /data/merged-output.p
 **Merge a single PDF file:**
 
 ```bash
-# Using Node.js
-yarn cli ./document.pdf output.pdf
+# Using Bun
+bun cli ./document.pdf output.pdf
 
 # Using Docker
 docker run -v $(pwd):/data merger-pdf merge-pdf /data/document.pdf /data/output.pdf
@@ -140,7 +127,7 @@ docker run -v $(pwd):/data merger-pdf merge-pdf /data/document.pdf /data/output.
 
 ```bash
 # If you don't specify an output filename, a UUID-based name will be generated
-yarn cli ./pdfs
+bun cli ./pdfs
 ```
 
 ### CLI Arguments
