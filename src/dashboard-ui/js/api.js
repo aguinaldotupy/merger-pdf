@@ -1,6 +1,6 @@
 // API client for analytics dashboard
 const API = {
-	baseURL: '/api/analytics',
+	baseURL: "/api/analytics",
 	token: null,
 
 	setToken(token) {
@@ -14,17 +14,17 @@ const API = {
 	async request(endpoint, options = {}) {
 		const url = `${this.baseURL}${endpoint}`;
 		const headers = {
-			'Content-Type': 'application/json',
-			...options.headers
+			"Content-Type": "application/json",
+			...options.headers,
 		};
 
 		if (this.token) {
-			headers['X-API-Token'] = this.token;
+			headers["X-API-Token"] = this.token;
 		}
 
 		const response = await fetch(url, {
 			...options,
-			headers
+			headers,
 		});
 
 		if (!response.ok) {
@@ -37,7 +37,7 @@ const API = {
 	},
 
 	async getOverview() {
-		const response = await this.request('/overview');
+		const response = await this.request("/overview");
 		return response.data;
 	},
 
@@ -46,13 +46,15 @@ const API = {
 		return response.data;
 	},
 
-	async getErrors(limit = 50, groupBy = 'event') {
-		const response = await this.request(`/errors?limit=${limit}&groupBy=${groupBy}`);
+	async getErrors(limit = 50, groupBy = "event") {
+		const response = await this.request(
+			`/errors?limit=${limit}&groupBy=${groupBy}`,
+		);
 		return response.data;
 	},
 
 	async checkHealth() {
-		const response = await this.request('/health');
+		const response = await this.request("/health");
 		return response.data;
-	}
+	},
 };

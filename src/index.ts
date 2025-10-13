@@ -3,10 +3,10 @@ import path from "node:path";
 import axios from "axios";
 import express from "express";
 import type { Application, Request, Response } from "express";
+import { AnalyticsService } from "./analytics/service";
+import dashboardRoutes from "./dashboard/routes";
 import { PDFMerger } from "./pdf-merger";
 import { toSlug, uuidv4 } from "./utils";
-import dashboardRoutes from "./dashboard/routes";
-import { AnalyticsService } from "./analytics/service";
 
 const app: Application = express();
 app.use(express.json());

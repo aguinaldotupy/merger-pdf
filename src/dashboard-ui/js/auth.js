@@ -1,6 +1,6 @@
 // Authentication module
 const Auth = {
-	TOKEN_KEY: 'analytics_token',
+	TOKEN_KEY: "analytics_token",
 
 	init() {
 		// Try to restore token from sessionStorage on page load
@@ -12,7 +12,7 @@ const Auth = {
 
 	login(token) {
 		if (!token || token.length < 32) {
-			throw new Error('Token deve ter pelo menos 32 caracteres');
+			throw new Error("Token deve ter pelo menos 32 caracteres");
 		}
 		// Save to sessionStorage
 		sessionStorage.setItem(this.TOKEN_KEY, token);
@@ -31,5 +31,5 @@ const Auth = {
 
 	getToken() {
 		return sessionStorage.getItem(this.TOKEN_KEY);
-	}
+	},
 };
