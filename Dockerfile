@@ -12,6 +12,10 @@ COPY . .
 
 RUN yarn build
 
+# Expor CLI helper
+RUN echo '#!/bin/sh\nnode /app/dist/merge-cli.js "$@"' > /usr/local/bin/merge-pdf && \
+    chmod +x /usr/local/bin/merge-pdf
+
 EXPOSE 3000
 
 CMD ["yarn", "serve"] 
