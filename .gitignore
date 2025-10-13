@@ -2,3 +2,14 @@ node_modules/
 dist/
 .env
 .claude
+
+/src/generated/prisma
+
+# Prisma
+prisma/analytics.db
+prisma/analytics.db-journal
+prisma/*.db-journal
+
+# Analytics Dashboard Frontend
+src/dashboard-ui/dist/
+src/dashboard-ui/node_modules/

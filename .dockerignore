@@ -1,0 +1,47 @@
+# Node modules
+node_modules/
+npm-debug.log
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+dist/
+*.log
+
+# Test files
+*.test.ts
+*.spec.ts
+__tests__/
+coverage/
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Database (will be created at runtime)
+prisma/analytics.db*
+prisma/migrations/
+
+# Specs
+.specify/
+specs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

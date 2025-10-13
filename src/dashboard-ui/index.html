@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>PDF Analytics Dashboard</title>
+	<link rel="stylesheet" href="/dashboard/css/styles.css">
+</head>
+<body>
+	<!-- Login Page -->
+	<div id="login-page" class="login-container">
+		<div class="login-card card">
+			<div class="card-header">
+				<h2 class="card-title">PDF Analytics Dashboard</h2>
+				<p class="card-description">Digite o token de autenticação para acessar</p>
+			</div>
+			<div class="card-content">
+				<form id="login-form">
+					<div class="form-group">
+						<label for="token-input" class="form-label">API Token</label>
+						<input
+							type="password"
+							id="token-input"
+							class="input"
+							placeholder="Digite o token (mínimo 32 caracteres)"
+							required
+							minlength="32"
+						>
+					</div>
+					<div id="login-error" class="error hidden"></div>
+					<button type="submit" class="btn btn-primary" style="width: 100%;">
+						Entrar
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<!-- Dashboard -->
+	<div id="dashboard" class="hidden">
+		<!-- Header -->
+		<header class="header">
+			<div class="container">
+				<div class="header-content">
+					<h1>PDF Analytics Dashboard</h1>
+					<button id="logout-btn" class="btn btn-secondary">Sair</button>
+				</div>
+			</div>
+		</header>
+
+		<!-- Tabs -->
+		<nav class="tabs">
+			<div class="container">
+				<ul class="tabs-list">
+					<li>
+						<button class="tab-trigger active" data-tab="overview">
+							Visão Geral
+						</button>
+					</li>
+					<li>
+						<button class="tab-trigger" data-tab="top-urls">
+							URLs Mais Acessadas
+						</button>
+					</li>
+					<li>
+						<button class="tab-trigger" data-tab="errors">
+							Rastreamento de Erros
+						</button>
+					</li>
+				</ul>
+			</div>
+		</nav>
+
+		<!-- Content -->
+		<main class="container">
+			<!-- Overview Tab -->
+			<div id="overview-tab" class="tab-panel active">
+				<div class="tab-content">
+					<div class="flex items-center justify-between mb-4">
+						<h2 style="font-size: 1.5rem; font-weight: 600;">Estatísticas de Downloads</h2>
+						<button id="overview-refresh-btn" class="btn btn-secondary">
+							Atualizar
+						</button>
+					</div>
+
+					<div id="overview-loading" class="loading">
+						<div class="loading-spinner"></div>
+						<span style="margin-left: 0.5rem;">Carregando...</span>
+					</div>
+
+					<div id="overview-error" class="error hidden"></div>
+
+					<div id="overview-content" class="hidden">
+						<div class="stats-grid" id="stats-grid"></div>
+
+						<div class="card">
+							<div class="card-header">
+								<h3 class="card-title">Detalhamento por Status Code</h3>
+							</div>
+							<div class="card-content">
+								<div class="table-container">
+									<table id="overview-table">
+										<thead>
+											<tr>
+												<th>Status Code</th>
+												<th>Contagem</th>
+												<th class="text-right">Porcentagem</th>
+											</tr>
+										</thead>
+										<tbody id="overview-tbody"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div id="overview-empty" class="empty-state hidden">
+						<div class="empty-state-icon">📊</div>
+						<p class="empty-state-text">Nenhum dado disponível ainda.</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Top URLs Tab -->
+			<div id="top-urls-tab" class="tab-panel">
+				<div class="tab-content">
+					<div class="flex items-center justify-between mb-4">
+						<h2 style="font-size: 1.5rem; font-weight: 600;">URLs Mais Acessadas</h2>
+						<div class="flex items-center gap-2">
+							<label for="urls-limit" style="font-size: 0.875rem; color: hsl(var(--muted-foreground));">
+								Mostrar:
+							</label>
+							<select id="urls-limit" class="select">
+								<option value="10">10</option>
+								<option value="25" selected>25</option>
+								<option value="50">50</option>
+								<option value="100">100</option>
+							</select>
+							<button id="urls-refresh-btn" class="btn btn-secondary">
+								Atualizar
+							</button>
+						</div>
+					</div>
+
+					<div id="urls-loading" class="loading">
+						<div class="loading-spinner"></div>
+						<span style="margin-left: 0.5rem;">Carregando...</span>
+					</div>
+
+					<div id="urls-error" class="error hidden"></div>
+
+					<div id="urls-content" class="hidden">
+						<div class="card">
+							<div class="card-content">
+								<div class="table-container">
+									<table id="urls-table">
+										<thead>
+											<tr>
+												<th>URL</th>
+												<th class="text-right">Total</th>
+												<th class="text-right">Sucesso</th>
+												<th class="text-right">Erros</th>
+												<th class="text-right">Taxa de Sucesso</th>
+												<th>Primeiro Acesso</th>
+												<th>Último Acesso</th>
+											</tr>
+										</thead>
+										<tbody id="urls-tbody"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div id="urls-empty" class="empty-state hidden">
+						<div class="empty-state-icon">🔗</div>
+						<p class="empty-state-text">Nenhuma URL foi acessada ainda.</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Errors Tab -->
+			<div id="errors-tab" class="tab-panel">
+				<div class="tab-content">
+					<div class="flex items-center justify-between mb-4">
+						<h2 style="font-size: 1.5rem; font-weight: 600;">Rastreamento de Erros</h2>
+						<div class="flex items-center gap-2">
+							<label for="errors-group" style="font-size: 0.875rem; color: hsl(var(--muted-foreground));">
+								Agrupar por:
+							</label>
+							<select id="errors-group" class="select">
+								<option value="event" selected>Eventos Individuais</option>
+								<option value="url">Por URL</option>
+							</select>
+							<label for="errors-limit" style="font-size: 0.875rem; color: hsl(var(--muted-foreground));">
+								Mostrar:
+							</label>
+							<select id="errors-limit" class="select">
+								<option value="25">25</option>
+								<option value="50" selected>50</option>
+								<option value="100">100</option>
+								<option value="200">200</option>
+							</select>
+							<button id="errors-refresh-btn" class="btn btn-secondary">
+								Atualizar
+							</button>
+						</div>
+					</div>
+
+					<div id="errors-loading" class="loading">
+						<div class="loading-spinner"></div>
+						<span style="margin-left: 0.5rem;">Carregando...</span>
+					</div>
+
+					<div id="errors-error" class="error hidden"></div>
+
+					<div id="errors-content" class="hidden">
+						<div class="card">
+							<div class="card-content">
+								<div class="table-container">
+									<table id="errors-table">
+										<thead>
+											<tr>
+												<th>Timestamp</th>
+												<th>URL</th>
+												<th class="text-center">Status Code</th>
+												<th>Mensagem de Erro</th>
+											</tr>
+										</thead>
+										<tbody id="errors-tbody"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div id="errors-empty" class="empty-state hidden">
+						<div class="empty-state-icon">✅</div>
+						<p class="empty-state-text">Nenhum erro registrado ainda.</p>
+						<p class="empty-state-text" style="margin-top: 0.5rem;">Isso é um bom sinal!</p>
+					</div>
+				</div>
+			</div>
+		</main>
+	</div>
+
+	<script src="/dashboard/js/api.js"></script>
+	<script src="/dashboard/js/auth.js"></script>
+	<script src="/dashboard/js/app.js"></script>
+</body>
+</html>

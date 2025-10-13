@@ -1,0 +1,418 @@
+openapi: 3.0.3
+info:
+  title: PDF Download Analytics API
+  description: API for tracking and querying PDF download analytics
+  version: 1.0.0
+  contact:
+    name: PDF Merger API Team
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+  - url: https://your-domain.com
+    description: Production server
+
+security:
+  - ApiToken: []
+
+paths:
+  /api/analytics/overview:
+    get:
+      summary: Get download statistics overview
+      description: Returns aggregated download counts grouped by HTTP status code categories
+      tags:
+        - Analytics
+      responses:
+        '200':
+          description: Successful response with status code overview
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/StatusOverview'
+                  meta:
+                    $ref: '#/components/schemas/ResponseMeta'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/analytics/top-urls:
+    get:
+      summary: Get most accessed URLs
+      description: Returns a ranked list of most frequently accessed URLs
+      tags:
+        - Analytics
+      parameters:
+        - name: limit
+          in: query
+          description: Number of top URLs to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 25
+      responses:
+        '200':
+          description: Successful response with top URLs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UrlStatistics'
+                  meta:
+                    $ref: '#/components/schemas/ResponseMeta'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/analytics/errors:
+    get:
+      summary: Get error tracking information
+      description: Returns recent error events and URLs with highest error rates
+      tags:
+        - Analytics
+      parameters:
+        - name: limit
+          in: query
+          description: Number of error events to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 50
+        - name: groupBy
+          in: query
+          description: Group errors by URL or show individual events
+          required: false
+          schema:
+            type: string
+            enum: [url, event]
+            default: event
+      responses:
+        '200':
+          description: Successful response with error tracking data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    oneOf:
+                      - type: array
+                        items:
+                          $ref: '#/components/schemas/ErrorEvent'
+                      - type: array
+                        items:
+                          $ref: '#/components/schemas/ErrorByUrl'
+                  meta:
+                    $ref: '#/components/schemas/ResponseMeta'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/analytics/event:
+    post:
+      summary: Record a download event
+      description: Internal endpoint to record PDF download attempts (called by analytics middleware)
+      tags:
+        - Analytics
+      security:
+        - {} # No authentication required for internal use
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DownloadEventInput'
+      responses:
+        '201':
+          description: Event recorded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        example: 550e8400-e29b-41d4-a716-446655440000
+                  meta:
+                    $ref: '#/components/schemas/ResponseMeta'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    ApiToken:
+      type: apiKey
+      in: header
+      name: X-API-Token
+      description: API token for dashboard authentication (value from ANALYTICS_API_TOKEN env var)
+
+  schemas:
+    StatusOverview:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of download attempts
+          example: 1234
+        success:
+          type: integer
+          description: Successful downloads (status 2xx)
+          example: 1100
+        redirect:
+          type: integer
+          description: Redirects (status 3xx)
+          example: 20
+        clientError:
+          type: integer
+          description: Client errors (status 4xx)
+          example: 100
+        serverError:
+          type: integer
+          description: Server errors (status 5xx)
+          example: 14
+        byStatusCode:
+          type: array
+          description: Detailed breakdown by specific status code
+          items:
+            type: object
+            properties:
+              statusCode:
+                type: integer
+                example: 200
+              count:
+                type: integer
+                example: 1050
+              percentage:
+                type: number
+                format: float
+                example: 85.1
+
+    UrlStatistics:
+      type: object
+      properties:
+        url:
+          type: string
+          description: The URL that was accessed
+          example: https://example.com/file1.pdf
+        accessCount:
+          type: integer
+          description: Total number of times this URL was accessed
+          example: 150
+        successCount:
+          type: integer
+          description: Number of successful downloads for this URL
+          example: 145
+        errorCount:
+          type: integer
+          description: Number of failed downloads for this URL
+          example: 5
+        successRate:
+          type: number
+          format: float
+          description: Percentage of successful downloads
+          example: 96.67
+        lastAccessed:
+          type: string
+          format: date-time
+          description: Timestamp of most recent access
+          example: 2025-01-13T10:30:00Z
+        firstAccessed:
+          type: string
+          format: date-time
+          description: Timestamp of first access
+          example: 2025-01-10T08:15:00Z
+
+    ErrorEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        url:
+          type: string
+          description: The URL that failed
+          example: https://example.com/invalid.pdf
+        statusCode:
+          type: integer
+          description: HTTP error status code
+          example: 404
+        timestamp:
+          type: string
+          format: date-time
+          description: When the error occurred
+          example: 2025-01-13T10:30:00Z
+        errorMessage:
+          type: string
+          nullable: true
+          description: Detailed error message if available
+          example: File not found
+
+    ErrorByUrl:
+      type: object
+      properties:
+        url:
+          type: string
+          description: The URL with errors
+          example: https://example.com/problematic.pdf
+        errorCount:
+          type: integer
+          description: Total number of errors for this URL
+          example: 25
+        mostCommonStatusCode:
+          type: integer
+          description: Most frequently occurring error code
+          example: 500
+        lastError:
+          type: string
+          format: date-time
+          description: Timestamp of most recent error
+          example: 2025-01-13T10:30:00Z
+        lastErrorMessage:
+          type: string
+          nullable: true
+          description: Most recent error message
+          example: Connection timeout
+
+    DownloadEventInput:
+      type: object
+      required:
+        - url
+        - statusCode
+      properties:
+        url:
+          type: string
+          maxLength: 2048
+          description: The URL that was requested
+          example: https://example.com/document.pdf
+        statusCode:
+          type: integer
+          minimum: 100
+          maximum: 599
+          description: HTTP status code returned
+          example: 200
+        timestamp:
+          type: string
+          format: date-time
+          description: When the download occurred (defaults to now if not provided)
+          example: 2025-01-13T10:30:00Z
+        userAgent:
+          type: string
+          nullable: true
+          description: Client User-Agent header
+          example: Mozilla/5.0 (Windows NT 10.0; Win64; x64)
+        responseTime:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Response time in milliseconds
+          example: 1250
+        errorMessage:
+          type: string
+          nullable: true
+          maxLength: 1000
+          description: Error details if status >= 400
+          example: Failed to connect to remote server
+
+    ResponseMeta:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: When the response was generated
+          example: 2025-01-13T10:30:00Z
+        count:
+          type: integer
+          nullable: true
+          description: Number of items returned (for array responses)
+          example: 25
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: Error message
+          example: Authentication required
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+  responses:
+    BadRequestError:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: Invalid limit parameter (must be between 1 and 1000)
+            meta:
+              timestamp: 2025-01-13T10:30:00Z
+
+    UnauthorizedError:
+      description: Missing or invalid API token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: Authentication required. Provide X-API-Token header.
+            meta:
+              timestamp: 2025-01-13T10:30:00Z
+
+    InternalServerError:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: Internal server error. Please try again later.
+            meta:
+              timestamp: 2025-01-13T10:30:00Z
+
+tags:
+  - name: Analytics
+    description: PDF download analytics endpoints
