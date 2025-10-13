@@ -1,3 +1,13 @@
+# [3.0.0](https://github.com/aguinaldotupy/merger-pdf/compare/v2.0.0...v3.0.0) (2025-10-13)
+
+
+* feat!: remove contact information from README ([dd0edd2](https://github.com/aguinaldotupy/merger-pdf/commit/dd0edd2e958d0d9d6ebf92e98d000eef650d7b9e))
+
+
+### BREAKING CHANGES
+
+* Remove contact information from README.md
+
 # [2.0.0](https://github.com/aguinaldotupy/merger-pdf/compare/v1.0.2...v2.0.0) (2025-10-13)
 
 
