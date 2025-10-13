@@ -27,7 +27,7 @@ app.post("/", async (req: Request, res: Response) => {
 	try {
 		// Create a new PDF merger
 		const merger = await PDFMerger.create();
-		
+
 		// Set metadata
 		merger.setMetadata({
 			title,
@@ -52,7 +52,7 @@ app.post("/", async (req: Request, res: Response) => {
 		const uuid = uuidv4();
 		const filename = `${toSlug(uuid)}.pdf`;
 		const outputPath = path.join(__dirname, filename);
-		
+
 		await merger.saveToFile(outputPath);
 
 		// Send the merged PDF as a response
