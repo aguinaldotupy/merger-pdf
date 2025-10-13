@@ -1,21 +1,21 @@
-FROM node:23.7-alpine3.21
+FROM oven/bun:1.1.45-alpine
 
 ENV REQUEST_TIMEOUT=30000
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
+COPY package.json bun.lockb ./
 
-RUN yarn install
+RUN bun install
 
 COPY . .
 
-RUN yarn build
+RUN bun run build
 
 # Expor CLI helper
-RUN echo '#!/bin/sh\nnode /app/dist/merge-cli.js "$@"' > /usr/local/bin/merge-pdf && \
+RUN echo '#!/bin/sh\nbun /app/dist/merge-cli.js "$@"' > /usr/local/bin/merge-pdf && \
     chmod +x /usr/local/bin/merge-pdf
 
 EXPOSE 3000
 
-CMD ["yarn", "serve"] 
+CMD ["bun", "run", "serve"]
