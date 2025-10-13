@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/aguinaldotupy/merger-pdf/compare/v1.0.0...v1.0.1) (2025-10-13)
+
+
+### Bug Fixes
+
+* update workflow trigger to push on main branch and ensure consistent checkout steps ([8bee958](https://github.com/aguinaldotupy/merger-pdf/commit/8bee9581617d059ae43bafddc24934528d3cf81e))
+
 # 1.0.0 (2025-10-13)
 
 
