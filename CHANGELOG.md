@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/aguinaldotupy/merger-pdf/compare/v1.0.1...v1.0.2) (2025-10-13)
+
+
+### Bug Fixes
+
+* update version to 3.0.0 in package.json ([29aac9f](https://github.com/aguinaldotupy/merger-pdf/commit/29aac9f78f2876115e0963881f5974fa92965358))
+
 ## [1.0.1](https://github.com/aguinaldotupy/merger-pdf/compare/v1.0.0...v1.0.1) (2025-10-13)
 
 
