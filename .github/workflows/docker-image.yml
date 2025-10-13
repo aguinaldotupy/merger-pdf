@@ -73,10 +73,11 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (Docker Hub)
         uses: docker/build-push-action@v4
         with:
           context: .
+          file: docker/Dockerfile
           push: true
           tags: |
             ${{ secrets.DOCKER_HUB_USERNAME }}/merger-pdf:latest
@@ -105,10 +106,11 @@ jobs:
             type=semver,pattern={{major}},value=v${{ steps.package_version.outputs.version }}
             type=raw,value=latest
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (GHCR)
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: docker/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
