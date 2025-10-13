@@ -88,6 +88,66 @@ Check the health status of the server.
 
 - **Response**: A simple message indicating the server is healthy.
 
+## CLI Usage
+
+The project includes a command-line interface for merging PDFs directly from your terminal.
+
+### Running the CLI
+
+#### Using Node.js directly:
+
+```bash
+# Build the project first
+yarn build
+
+# Run the CLI
+yarn cli <input_file_or_directory> [output.pdf]
+```
+
+#### Using Docker:
+
+```bash
+# Build the Docker image
+docker build -t merger-pdf .
+
+# Run the CLI using the helper command
+docker run -v $(pwd):/data merger-pdf merge-pdf /data/input /data/output.pdf
+```
+
+### CLI Examples
+
+**Merge all PDFs in a directory:**
+
+```bash
+# Using Node.js
+yarn cli ./pdfs merged-output.pdf
+
+# Using Docker
+docker run -v $(pwd):/data merger-pdf merge-pdf /data/pdfs /data/merged-output.pdf
+```
+
+**Merge a single PDF file:**
+
+```bash
+# Using Node.js
+yarn cli ./document.pdf output.pdf
+
+# Using Docker
+docker run -v $(pwd):/data merger-pdf merge-pdf /data/document.pdf /data/output.pdf
+```
+
+**Auto-generate output filename:**
+
+```bash
+# If you don't specify an output filename, a UUID-based name will be generated
+yarn cli ./pdfs
+```
+
+### CLI Arguments
+
+- `<input_file_or_directory>` (required): Path to a PDF file or directory containing PDF files
+- `[output.pdf]` (optional): Output filename. If not provided, a UUID-based filename will be generated
+
 ## Error Handling
 
 - The API returns a 400 status code for invalid request bodies.
