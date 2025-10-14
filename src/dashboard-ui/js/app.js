@@ -245,12 +245,17 @@ const App = {
 		}
 	},
 
+	escapeHtml(text) {
+		const div = document.createElement("div");
+		div.textContent = text;
+		return div.innerHTML;
+	},
+
 	renderTopUrls(data) {
 		const tbody = document.getElementById("urls-tbody");
 		tbody.innerHTML = data
 			.map((item) => {
 				const successRate = item.successRate.toFixed(1);
-				const rateClass = "";
 				let rateColor = "";
 				if (successRate >= 95) {
 					rateColor = "#22c55e";
@@ -260,10 +265,11 @@ const App = {
 					rateColor = "#ef4444";
 				}
 
+				const escapedUrl = this.escapeHtml(item.url);
 				return `
 				<tr>
-					<td class="truncate" style="max-width: 300px;" title="${item.url}">
-						<span class="font-mono">${item.url}</span>
+					<td class="truncate" style="max-width: 300px;" title="${escapedUrl}">
+						<span class="font-mono">${escapedUrl}</span>
 					</td>
 					<td class="text-right"><strong>${item.accessCount.toLocaleString()}</strong></td>
 					<td class="text-right" style="color: #22c55e;">${item.successCount.toLocaleString()}</td>
@@ -327,25 +333,27 @@ const App = {
 					badgeLabel = "Client Error";
 				}
 
-				const errorMessage =
-					item.errorMessage ||
-					'<em style="color: hsl(var(--muted-foreground));">Sem mensagem de erro</em>';
+				const escapedUrl = this.escapeHtml(item.url);
+				const rawErrorMessage = item.errorMessage || "";
+				const escapedErrorMessage = rawErrorMessage
+					? this.escapeHtml(rawErrorMessage)
+					: '<em style="color: hsl(var(--muted-foreground));">Sem mensagem de erro</em>';
 
 				return `
 				<tr>
 					<td style="font-size: 0.875rem; white-space: nowrap;">
 						${new Date(item.timestamp).toLocaleString("pt-BR")}
 					</td>
-					<td class="truncate" style="max-width: 300px;" title="${item.url}">
-						<span class="font-mono">${item.url}</span>
+					<td class="truncate" style="max-width: 300px;" title="${escapedUrl}">
+						<span class="font-mono">${escapedUrl}</span>
 					</td>
 					<td class="text-center">
 						<span class="badge ${badgeClass}" title="${badgeLabel}">
 							${statusCode}
 						</span>
 					</td>
-					<td class="truncate" style="max-width: 400px;" title="${item.errorMessage || "Sem mensagem"}">
-						${errorMessage}
+					<td class="truncate" style="max-width: 400px;" title="${this.escapeHtml(rawErrorMessage || "Sem mensagem")}">
+						${escapedErrorMessage}
 					</td>
 				</tr>
 			`;

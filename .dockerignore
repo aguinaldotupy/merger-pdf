@@ -35,7 +35,6 @@ docs/
 
 # Database (will be created at runtime)
 prisma/analytics.db*
-prisma/migrations/
 
 # Specs
 .specify/

@@ -1,7 +1,10 @@
+import { timingSafeEqual } from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
 
 // Default development token (insecure - change in production!)
 const DEFAULT_DEV_TOKEN = "dev-token-change-me-in-production-min32chars";
+
+let hasWarnedAboutDefaultToken = false;
 
 export function authMiddleware(
 	req: Request,
@@ -14,8 +17,10 @@ export function authMiddleware(
 	// Warn if using default token in production
 	if (
 		validToken === DEFAULT_DEV_TOKEN &&
-		process.env.NODE_ENV === "production"
+		process.env.NODE_ENV === "production" &&
+		!hasWarnedAboutDefaultToken
 	) {
+		hasWarnedAboutDefaultToken = true;
 		console.warn(
 			"⚠️  WARNING: Using default development token in production! Set ANALYTICS_API_TOKEN environment variable.",
 		);
@@ -41,7 +46,13 @@ export function authMiddleware(
 	}
 
 	// Validate token matches
-	if (token !== validToken) {
+	const tokenBuffer = Buffer.from(token);
+	const validTokenBuffer = Buffer.from(validToken);
+
+	if (
+		tokenBuffer.length !== validTokenBuffer.length ||
+		!timingSafeEqual(tokenBuffer, validTokenBuffer)
+	) {
 		res.status(401).json({
 			success: false,
 			error: "Invalid authentication token.",
