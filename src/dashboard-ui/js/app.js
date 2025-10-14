@@ -20,11 +20,11 @@ const App = {
 		});
 
 		// Tab navigation
-		document.querySelectorAll(".tab-trigger").forEach((button) => {
+		for (const button of document.querySelectorAll(".tab-trigger")) {
 			button.addEventListener("click", () => {
 				this.switchTab(button.dataset.tab);
 			});
-		});
+		}
 
 		// Refresh buttons
 		document
@@ -104,18 +104,18 @@ const App = {
 
 	switchTab(tabName) {
 		// Update tab triggers
-		document.querySelectorAll(".tab-trigger").forEach((button) => {
+		for (const button of document.querySelectorAll(".tab-trigger")) {
 			if (button.dataset.tab === tabName) {
 				button.classList.add("active");
 			} else {
 				button.classList.remove("active");
 			}
-		});
+		}
 
 		// Update tab panels
-		document.querySelectorAll(".tab-panel").forEach((panel) => {
+		for (const panel of document.querySelectorAll(".tab-panel")) {
 			panel.classList.remove("active");
-		});
+		}
 		document.getElementById(`${tabName}-tab`).classList.add("active");
 
 		// Load data for the tab if needed
