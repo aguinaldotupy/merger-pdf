@@ -23,7 +23,7 @@ paths:
       tags:
         - Analytics
       responses:
-        '200':
+        "200":
           description: Successful response with status code overview
           content:
             application/json:
@@ -34,13 +34,13 @@ paths:
                     type: boolean
                     example: true
                   data:
-                    $ref: '#/components/schemas/StatusOverview'
+                    $ref: "#/components/schemas/StatusOverview"
                   meta:
-                    $ref: '#/components/schemas/ResponseMeta'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                    $ref: "#/components/schemas/ResponseMeta"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /api/analytics/top-urls:
     get:
@@ -59,7 +59,7 @@ paths:
             maximum: 1000
             default: 25
       responses:
-        '200':
+        "200":
           description: Successful response with top URLs
           content:
             application/json:
@@ -72,15 +72,15 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/UrlStatistics'
+                      $ref: "#/components/schemas/UrlStatistics"
                   meta:
-                    $ref: '#/components/schemas/ResponseMeta'
-        '400':
-          $ref: '#/components/responses/BadRequestError'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                    $ref: "#/components/schemas/ResponseMeta"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /api/analytics/errors:
     get:
@@ -107,7 +107,7 @@ paths:
             enum: [url, event]
             default: event
       responses:
-        '200':
+        "200":
           description: Successful response with error tracking data
           content:
             application/json:
@@ -121,18 +121,18 @@ paths:
                     oneOf:
                       - type: array
                         items:
-                          $ref: '#/components/schemas/ErrorEvent'
+                          $ref: "#/components/schemas/ErrorEvent"
                       - type: array
                         items:
-                          $ref: '#/components/schemas/ErrorByUrl'
+                          $ref: "#/components/schemas/ErrorByUrl"
                   meta:
-                    $ref: '#/components/schemas/ResponseMeta'
-        '400':
-          $ref: '#/components/responses/BadRequestError'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                    $ref: "#/components/schemas/ResponseMeta"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /api/analytics/event:
     post:
@@ -141,15 +141,15 @@ paths:
       tags:
         - Analytics
       security:
-        - {} # No authentication required for internal use
+        - ApiToken: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DownloadEventInput'
+              $ref: "#/components/schemas/DownloadEventInput"
       responses:
-        '201':
+        "201":
           description: Event recorded successfully
           content:
             application/json:
@@ -167,11 +167,11 @@ paths:
                         format: uuid
                         example: 550e8400-e29b-41d4-a716-446655440000
                   meta:
-                    $ref: '#/components/schemas/ResponseMeta'
-        '400':
-          $ref: '#/components/responses/BadRequestError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                    $ref: "#/components/schemas/ResponseMeta"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
 components:
   securitySchemes:
@@ -374,7 +374,7 @@ components:
           description: Error message
           example: Authentication required
         meta:
-          $ref: '#/components/schemas/ResponseMeta'
+          $ref: "#/components/schemas/ResponseMeta"
 
   responses:
     BadRequestError:
@@ -382,7 +382,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
           example:
             success: false
             error: Invalid limit parameter (must be between 1 and 1000)
@@ -394,7 +394,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
           example:
             success: false
             error: Authentication required. Provide X-API-Token header.
@@ -406,7 +406,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
           example:
             success: false
             error: Internal server error. Please try again later.

@@ -10,14 +10,14 @@ WORKDIR /app
 
 COPY package.json bun.lock ./
 
-RUN bun install
+RUN bun install --frozen-lockfile
 
 COPY . .
 
 # Generate Prisma client with the specified provider and build
 RUN bun run prisma:generate && bun run build
 
-# Expor CLI helper
+# Export CLI helper
 RUN echo '#!/bin/sh\nbun /app/dist/merge-cli.js "$@"' > /usr/local/bin/merge-pdf && \
     chmod +x /usr/local/bin/merge-pdf
 
