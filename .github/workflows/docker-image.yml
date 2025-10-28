@@ -51,7 +51,7 @@ jobs:
         env:
           CI_BUILD_NUMBER: ${{ github.run_number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bun run release
+        run: npx -y semantic-release
 
   build:
     runs-on: ubuntu-latest
