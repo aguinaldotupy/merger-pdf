@@ -1,3 +1,15 @@
+## [4.0.1](https://github.com/aguinaldotupy/merger-pdf/compare/v4.0.0...v4.0.1) (2025-10-28)
+
+
+### Bug Fixes
+
+* add .bumrc and .bun-version files, and update Docker workflow to check Node.js version ([880a7a5](https://github.com/aguinaldotupy/merger-pdf/commit/880a7a5adac4c6bbf07fa8c16c3f20be38256e7a))
+* add Node.js setup step to Docker image workflow ([58a270d](https://github.com/aguinaldotupy/merger-pdf/commit/58a270debc13d38286609a6daf116214b7f73b7e))
+* reorder Node.js setup step in Docker image workflow ([859122e](https://github.com/aguinaldotupy/merger-pdf/commit/859122eae9c26044c5b9ec4da732b83e11b088fd))
+* update Bun version to 1.1.45 and correct lockfile references ([2138c79](https://github.com/aguinaldotupy/merger-pdf/commit/2138c792a752ac3bca90f5628d1bf09aba1c58d1))
+* update Node.js version to 25.0.0 in workflow and .tool-versions file ([a7b7346](https://github.com/aguinaldotupy/merger-pdf/commit/a7b7346e048940d8c6982ae63e07b13f319eb9d3))
+* update release command to use semantic-release ([b53d9e0](https://github.com/aguinaldotupy/merger-pdf/commit/b53d9e010e53c9f4710431929faf995e291e165b))
+
 # [4.0.0](https://github.com/aguinaldotupy/merger-pdf/compare/v3.0.1...v4.0.0) (2025-10-28)
 
 
