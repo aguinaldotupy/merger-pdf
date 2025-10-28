@@ -1,3 +1,104 @@
+# [4.0.0](https://github.com/aguinaldotupy/merger-pdf/compare/v3.0.1...v4.0.0) (2025-10-28)
+
+
+* feat!: add analytics dashboard with multi-database support ([9a37909](https://github.com/aguinaldotupy/merger-pdf/commit/9a37909afd9f64b818f2a50de1adee6e91b18d1b))
+
+
+### Bug Fixes
+
+* **ci:** update Docker workflow to use docker/Dockerfile path ([2087778](https://github.com/aguinaldotupy/merger-pdf/commit/2087778dc35fce416a2f58ae5971e3512f113bbf))
+
+
+### BREAKING CHANGES
+
+* PDF merge endpoint now tracks individual URL downloads instead of POST requests. Analytics dashboard requires authentication token.
+
+## New Features
+
+### Analytics Dashboard
+- Web-based dashboard at /dashboard for tracking PDF downloads
+- Real-time statistics by status code (2xx, 3xx, 4xx, 5xx)
+- Top URLs tracking with success rates and access counts
+- Error tracking with detailed error messages and timestamps
+- Token-based authentication (default: dev-token-change-me-in-production-min32chars)
+- Vanilla JavaScript dashboard (no React/Vite dependencies)
+- SessionStorage for token persistence
+
+### Multi-Database Support
+- SQLite (default), PostgreSQL, and MySQL support via DATABASE_PROVIDER env var
+- Dynamic Prisma schema selection at build time
+- Automatic database migrations on Docker container startup
+- Docker build args for database provider selection
+
+### Analytics Tracking
+- Individual PDF URL tracking (not POST requests)
+- Records: URL, status code, response time, user agent, errors
+- Fire-and-forget pattern (non-blocking analytics)
+- Tracks only PDF downloads, not API/dashboard endpoints
+
+### Docker Improvements
+- Organized docker/ directory structure
+- Automatic migrations via docker-entrypoint.sh
+- Multi-database Docker builds (sqlite, postgresql, mysql)
+- Optimized .dockerignore for faster builds
+- Dedicated docker/README.md documentation
+
+### SSL/Certificate Handling
+- Support for self-signed SSL certificates
+- Configured axios with rejectUnauthorized: false
+- Compatible with .test domains and internal certificates
+
+## Migration Guide
+
+### Environment Variables
+**Required:**
+- `DATABASE_PROVIDER`: sqlite, postgresql, or mysql (default: sqlite)
+- `DATABASE_URL`: Database connection string
+
+**Optional:**
+- `ANALYTICS_API_TOKEN`: Dashboard auth token (default: dev-token-change-me-in-production-min32chars)
+- `REQUEST_TIMEOUT`: PDF download timeout in ms (default: 30000)
+
+### Database Setup
+```bash
+# Install dependencies
+bun install
+
+# Generate Prisma client
+bun run prisma:generate
+
+# Run migrations
+bun run prisma:migrate
+```
+
+### Docker Usage
+```bash
+# Build (SQLite default)
+docker build -f docker/Dockerfile -t merger-pdf .
+
+# Build with PostgreSQL
+docker build -f docker/Dockerfile --build-arg DB_PROVIDER=postgresql -t merger-pdf:postgres .
+
+# Run with automatic migrations
+docker run -d -p 3000:3000 -v $(pwd)/prisma:/app/prisma merger-pdf
+```
+
+### Breaking Changes
+1. **Analytics tracking**: Now tracks individual PDF URLs, not POST requests
+2. **Docker file location**: Dockerfile moved to docker/Dockerfile (use -f flag)
+3. **New dependencies**: @prisma/client, prisma (SQLite by default)
+4. **Authentication required**: Dashboard requires ANALYTICS_API_TOKEN
+5. **Environment variables**: New DATABASE_PROVIDER and DATABASE_URL required
+
+## Technical Details
+
+- **Frontend**: Vanilla HTML/CSS/JS with Shadcn-inspired design
+- **Backend**: Express.js with Prisma ORM
+- **Database**: SQLite (default), PostgreSQL, MySQL
+- **Authentication**: Token-based (X-API-Token header)
+- **Analytics**: Non-blocking fire-and-forget recording
+- **Migrations**: Automatic on Docker startup
+
 ## [3.0.1](https://github.com/aguinaldotupy/merger-pdf/compare/v3.0.0...v3.0.1) (2025-10-13)
 
 # [3.0.0](https://github.com/aguinaldotupy/merger-pdf/compare/v2.0.0...v3.0.0) (2025-10-13)
