@@ -26,9 +26,11 @@ export function getPrismaClient(): PrismaClient {
 
 	// Enable WAL mode for better concurrency
 	if (process.env.DATABASE_PROVIDER === "sqlite") {
-		prisma.$queryRawUnsafe("PRAGMA journal_mode=WAL;").catch((error) => {
-			console.error("Failed to enable WAL mode:", error);
-		});
+		prisma
+			.$queryRawUnsafe("PRAGMA journal_mode=WAL;")
+			.catch((error: unknown) => {
+				console.error("Failed to enable WAL mode:", error);
+			});
 	}
 
 	return prisma;

@@ -79,7 +79,10 @@ export class AnalyticsService {
 			orderBy: { statusCode: "asc" },
 		});
 
-		const total = results.reduce((sum, r) => sum + r._count.id, 0);
+		const total = results.reduce(
+			(sum: number, r: { _count: { id: number } }) => sum + r._count.id,
+			0,
+		);
 
 		const overview: StatusCodeOverview = {
 			total,
@@ -87,11 +90,13 @@ export class AnalyticsService {
 			redirect: 0,
 			clientError: 0,
 			serverError: 0,
-			byStatusCode: results.map((r) => ({
-				statusCode: r.statusCode,
-				count: r._count.id,
-				percentage: total > 0 ? (r._count.id / total) * 100 : 0,
-			})),
+			byStatusCode: results.map(
+				(r: { statusCode: number; _count: { id: number } }) => ({
+					statusCode: r.statusCode,
+					count: r._count.id,
+					percentage: total > 0 ? (r._count.id / total) * 100 : 0,
+				}),
+			),
 		};
 
 		// Categorize by status code ranges
@@ -173,13 +178,20 @@ export class AnalyticsService {
 			});
 
 			// Convert grouped results to ErrorEvent format
-			return results.map((r) => ({
-				id: `${r.url}-${r.statusCode}`,
-				url: r.url,
-				statusCode: r.statusCode,
-				timestamp: r._max.timestamp || new Date(),
-				errorMessage: r._max.errorMessage,
-			}));
+			return results.map(
+				(r: {
+					url: string;
+					statusCode: number;
+					_count: { id: number };
+					_max: { timestamp: Date | null; errorMessage: string | null };
+				}) => ({
+					id: `${r.url}-${r.statusCode}`,
+					url: r.url,
+					statusCode: r.statusCode,
+					timestamp: r._max.timestamp || new Date(),
+					errorMessage: r._max.errorMessage,
+				}),
+			);
 		}
 
 		// Individual error events
