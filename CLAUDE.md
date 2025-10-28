@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 PDF Merger API is a TypeScript application that provides both an HTTP API and CLI tool for merging multiple PDF files. It supports both local file operations and remote PDF downloads via URLs.
 
-**Primary runtime**: Bun is the preferred runtime (see Dockerfile and bun.lock). Node.js (>=20) is also supported.
+**Primary runtime**: Bun is the preferred runtime (see Dockerfile and bun.lockb). Node.js (>=20) is also supported.
 
 ## Development Commands
 
@@ -52,7 +52,7 @@ bun run release  # Uses semantic-release
   - `refactor:` → patch version bump
   - `style:` → patch version bump
   - Breaking changes (`!`) → major version bump
-- **Automated updates**: CHANGELOG.md, package.json, bun.lock
+- **Automated updates**: CHANGELOG.md, package.json, bun.lockb
 - **NPM**: Does not publish to npm registry (`npmPublish: false`)
 - **GitHub**: Creates releases with `dist/**/*` files attached
 - **Workflow integration**: Sets GitHub Actions outputs (new_release_published, new_release_version, version)

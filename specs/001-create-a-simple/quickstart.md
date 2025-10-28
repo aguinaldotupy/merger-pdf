@@ -325,7 +325,7 @@ FROM oven/bun:1.1.45-alpine
 WORKDIR /app
 
 # Copy package files
-COPY package.json bun.lock ./
+COPY package.json bun.lockb ./
 COPY dashboard/package.json ./dashboard/
 
 # Install dependencies
