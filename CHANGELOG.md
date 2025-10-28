@@ -1,3 +1,10 @@
+## [4.0.2](https://github.com/aguinaldotupy/merger-pdf/compare/v4.0.1...v4.0.2) (2025-10-28)
+
+
+### Bug Fixes
+
+* change database provider to a static value in Prisma schema ([15ea73b](https://github.com/aguinaldotupy/merger-pdf/commit/15ea73bd0611d83754c069adbef147ecad942b5d))
+
 ## [4.0.1](https://github.com/aguinaldotupy/merger-pdf/compare/v4.0.0...v4.0.1) (2025-10-28)
 
 
