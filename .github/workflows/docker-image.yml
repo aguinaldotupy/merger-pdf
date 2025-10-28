@@ -46,12 +46,18 @@ jobs:
       - name: Build application
         run: bun run build
 
+      - name: Check node version
+        run: node -v
+
+      - name: Check path node is using
+        run: which node
+
       - name: Run semantic-release
         id: semantic-release
         env:
           CI_BUILD_NUMBER: ${{ github.run_number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx -y semantic-release
+        run: bun run release
 
   build:
     runs-on: ubuntu-latest
