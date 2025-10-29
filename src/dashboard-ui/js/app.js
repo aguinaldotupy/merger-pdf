@@ -1,5 +1,9 @@
 // Main application logic
 const App = {
+	currentDownloadsPage: 1,
+	totalDownloadsPages: 1,
+	downloadsSearchTimeout: null,
+
 	init() {
 		// Initialize Auth module to restore token from sessionStorage
 		Auth.init();
@@ -42,6 +46,12 @@ const App = {
 			.addEventListener("click", () => {
 				this.loadErrors();
 			});
+		document
+			.getElementById("downloads-refresh-btn")
+			.addEventListener("click", () => {
+				this.currentDownloadsPage = 1;
+				this.loadDownloads();
+			});
 
 		// Limit selectors
 		document.getElementById("urls-limit").addEventListener("change", () => {
@@ -52,6 +62,79 @@ const App = {
 		});
 		document.getElementById("errors-group").addEventListener("change", () => {
 			this.loadErrors();
+		});
+
+		// Downloads filters and pagination
+		document.getElementById("downloads-search").addEventListener("input", () => {
+			clearTimeout(this.downloadsSearchTimeout);
+			this.downloadsSearchTimeout = setTimeout(() => {
+				this.currentDownloadsPage = 1;
+				this.loadDownloads();
+			}, 500);
+		});
+		document
+			.getElementById("downloads-status-range")
+			.addEventListener("change", () => {
+				this.currentDownloadsPage = 1;
+				this.loadDownloads();
+			});
+		document
+			.getElementById("downloads-sort-by")
+			.addEventListener("change", () => {
+				this.currentDownloadsPage = 1;
+				this.loadDownloads();
+			});
+		document
+			.getElementById("downloads-sort-order")
+			.addEventListener("change", () => {
+				this.currentDownloadsPage = 1;
+				this.loadDownloads();
+			});
+		document
+			.getElementById("downloads-page-size")
+			.addEventListener("change", () => {
+				this.currentDownloadsPage = 1;
+				this.loadDownloads();
+			});
+		document
+			.getElementById("downloads-prev-btn")
+			.addEventListener("click", () => {
+				if (this.currentDownloadsPage > 1) {
+					this.currentDownloadsPage--;
+					this.loadDownloads();
+				}
+			});
+		document
+			.getElementById("downloads-next-btn")
+			.addEventListener("click", () => {
+				if (this.currentDownloadsPage < this.totalDownloadsPages) {
+					this.currentDownloadsPage++;
+					this.loadDownloads();
+				}
+			});
+
+		// Downloads table header sorting
+		document.querySelectorAll("#downloads-table th.sortable").forEach((th) => {
+			th.addEventListener("click", () => {
+				const sortBy = th.dataset.sort;
+				const currentSortBy = document.getElementById("downloads-sort-by").value;
+				const currentSortOrder =
+					document.getElementById("downloads-sort-order").value;
+
+				// Toggle order if clicking same column, otherwise default to desc
+				let newSortOrder = "desc";
+				if (sortBy === currentSortBy) {
+					newSortOrder = currentSortOrder === "desc" ? "asc" : "desc";
+				}
+
+				// Update selects
+				document.getElementById("downloads-sort-by").value = sortBy;
+				document.getElementById("downloads-sort-order").value = newSortOrder;
+
+				// Reset to page 1 and reload
+				this.currentDownloadsPage = 1;
+				this.loadDownloads();
+			});
 		});
 	},
 
@@ -125,6 +208,8 @@ const App = {
 			this.loadTopUrls();
 		} else if (tabName === "errors") {
 			this.loadErrors();
+		} else if (tabName === "downloads") {
+			this.loadDownloads();
 		}
 	},
 
@@ -359,6 +444,155 @@ const App = {
 			`;
 			})
 			.join("");
+	},
+
+	async loadDownloads() {
+		const loading = document.getElementById("downloads-loading");
+		const error = document.getElementById("downloads-error");
+		const content = document.getElementById("downloads-content");
+		const empty = document.getElementById("downloads-empty");
+
+		loading.classList.remove("hidden");
+		error.classList.add("hidden");
+		content.classList.add("hidden");
+		empty.classList.add("hidden");
+
+		try {
+			// Get filter values
+			const search = document.getElementById("downloads-search").value.trim();
+			const statusRange = document.getElementById("downloads-status-range").value;
+			const sortBy = document.getElementById("downloads-sort-by").value;
+			const sortOrder = document.getElementById("downloads-sort-order").value;
+			const pageSize = Number.parseInt(
+				document.getElementById("downloads-page-size").value,
+				10,
+			);
+
+			const filters = {};
+			if (search) filters.search = search;
+			if (statusRange) filters.statusRange = statusRange;
+
+			const pagination = {
+				page: this.currentDownloadsPage,
+				pageSize,
+				sortBy,
+				sortOrder,
+			};
+
+			const response = await API.getDownloads(filters, pagination);
+
+			if (!response.data || response.data.length === 0) {
+				empty.classList.remove("hidden");
+				loading.classList.add("hidden");
+				return;
+			}
+
+			this.totalDownloadsPages = response.pagination.totalPages;
+			this.renderDownloads(response.data, response.pagination);
+			content.classList.remove("hidden");
+			loading.classList.add("hidden");
+		} catch (err) {
+			error.textContent = `Erro ao carregar downloads: ${err.message}`;
+			error.classList.remove("hidden");
+			loading.classList.add("hidden");
+		}
+	},
+
+	updateDownloadsSortIndicators() {
+		const sortBy = document.getElementById("downloads-sort-by").value;
+		const sortOrder = document.getElementById("downloads-sort-order").value;
+
+		// Remove all sort indicators
+		document.querySelectorAll("#downloads-table th.sortable").forEach((th) => {
+			th.classList.remove("sorted-asc", "sorted-desc");
+		});
+
+		// Add indicator to current sorted column
+		const currentTh = document.querySelector(
+			`#downloads-table th.sortable[data-sort="${sortBy}"]`,
+		);
+		if (currentTh) {
+			currentTh.classList.add(
+				sortOrder === "asc" ? "sorted-asc" : "sorted-desc",
+			);
+		}
+	},
+
+	renderDownloads(data, pagination) {
+		const tbody = document.getElementById("downloads-tbody");
+		tbody.innerHTML = data
+			.map((item) => {
+				const statusCode = item.statusCode;
+				let badgeClass = "badge-secondary";
+				if (statusCode >= 200 && statusCode < 300) {
+					badgeClass = "badge-success";
+				} else if (statusCode >= 300 && statusCode < 400) {
+					badgeClass = "badge-warning";
+				} else if (statusCode >= 400) {
+					badgeClass = "badge-error";
+				}
+
+				const escapedUrl = this.escapeHtml(item.url);
+				const userAgent = item.userAgent || "-";
+				const truncatedUserAgent =
+					userAgent.length > 50 ? userAgent.substring(0, 50) + "..." : userAgent;
+				const responseTime = item.responseTime
+					? item.responseTime.toLocaleString()
+					: "-";
+				const rawErrorMessage = item.errorMessage || "";
+				const escapedErrorMessage = rawErrorMessage
+					? this.escapeHtml(rawErrorMessage)
+					: "-";
+				const truncatedError =
+					escapedErrorMessage.length > 50
+						? escapedErrorMessage.substring(0, 50) + "..."
+						: escapedErrorMessage;
+
+				return `
+				<tr>
+					<td style="font-size: 0.875rem; white-space: nowrap;">
+						${new Date(item.timestamp).toLocaleString("pt-BR")}
+					</td>
+					<td class="truncate" style="max-width: 300px;" title="${escapedUrl}">
+						<span class="font-mono">${escapedUrl}</span>
+					</td>
+					<td class="text-center">
+						<span class="badge ${badgeClass}">
+							${statusCode}
+						</span>
+					</td>
+					<td class="text-right">${responseTime}</td>
+					<td class="truncate" style="max-width: 200px; font-size: 0.875rem;" title="${this.escapeHtml(userAgent)}">
+						${this.escapeHtml(truncatedUserAgent)}
+					</td>
+					<td class="truncate" style="max-width: 200px;" title="${this.escapeHtml(rawErrorMessage || "-")}">
+						${truncatedError}
+					</td>
+				</tr>
+			`;
+			})
+			.join("");
+
+		// Update pagination info
+		const paginationInfo = document.getElementById("downloads-pagination-info");
+		const startItem = (pagination.page - 1) * pagination.pageSize + 1;
+		const endItem = Math.min(
+			pagination.page * pagination.pageSize,
+			pagination.total,
+		);
+		paginationInfo.textContent = `Mostrando ${startItem}-${endItem} de ${pagination.total} downloads`;
+
+		const pageInfo = document.getElementById("downloads-page-info");
+		pageInfo.textContent = `Página ${pagination.page} de ${pagination.totalPages}`;
+
+		// Update pagination buttons
+		const prevBtn = document.getElementById("downloads-prev-btn");
+		const nextBtn = document.getElementById("downloads-next-btn");
+		prevBtn.disabled = pagination.page <= 1;
+		nextBtn.disabled = pagination.page >= pagination.totalPages;
+
+		// Update sort indicators
+		this.updateDownloadsSortIndicators();
 	},
 };
 

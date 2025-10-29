@@ -67,6 +67,11 @@
 							Rastreamento de Erros
 						</button>
 					</li>
+					<li>
+						<button class="tab-trigger" data-tab="downloads">
+							Downloads
+						</button>
+					</li>
 				</ul>
 			</div>
 		</nav>
@@ -238,6 +243,138 @@
 						<div class="empty-state-icon">✅</div>
 						<p class="empty-state-text">Nenhum erro registrado ainda.</p>
 						<p class="empty-state-text" style="margin-top: 0.5rem;">Isso é um bom sinal!</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Downloads Tab -->
+			<div id="downloads-tab" class="tab-panel">
+				<div class="tab-content">
+					<div class="flex items-center justify-between mb-4">
+						<h2 style="font-size: 1.5rem; font-weight: 600;">Todos os Downloads</h2>
+						<button id="downloads-refresh-btn" class="btn btn-secondary">
+							Atualizar
+						</button>
+					</div>
+
+					<!-- Filters and Search -->
+					<div class="card mb-4">
+						<div class="card-content">
+							<div class="flex items-center gap-3 flex-wrap">
+								<!-- Search -->
+								<div style="flex: 1; min-width: 250px;">
+									<label for="downloads-search" style="font-size: 0.875rem; color: hsl(var(--muted-foreground)); display: block; margin-bottom: 0.25rem;">
+										Pesquisa:
+									</label>
+									<input
+										type="text"
+										id="downloads-search"
+										class="input"
+										placeholder="Pesquisar por URL..."
+									>
+								</div>
+
+								<!-- Status Range Filter -->
+								<div>
+									<label for="downloads-status-range" style="font-size: 0.875rem; color: hsl(var(--muted-foreground)); display: block; margin-bottom: 0.25rem;">
+										Status:
+									</label>
+									<select id="downloads-status-range" class="select">
+										<option value="">Todos</option>
+										<option value="success">Sucesso (2xx)</option>
+										<option value="redirect">Redirecionamento (3xx)</option>
+										<option value="client-error">Erro Cliente (4xx)</option>
+										<option value="server-error">Erro Servidor (5xx)</option>
+									</select>
+								</div>
+
+								<!-- Sort By -->
+								<div>
+									<label for="downloads-sort-by" style="font-size: 0.875rem; color: hsl(var(--muted-foreground)); display: block; margin-bottom: 0.25rem;">
+										Ordenar por:
+									</label>
+									<select id="downloads-sort-by" class="select">
+										<option value="timestamp" selected>Data</option>
+										<option value="url">URL</option>
+										<option value="statusCode">Status Code</option>
+										<option value="responseTime">Tempo de Resposta</option>
+									</select>
+								</div>
+
+								<!-- Sort Order -->
+								<div>
+									<label for="downloads-sort-order" style="font-size: 0.875rem; color: hsl(var(--muted-foreground)); display: block; margin-bottom: 0.25rem;">
+										Ordem:
+									</label>
+									<select id="downloads-sort-order" class="select">
+										<option value="desc" selected>Decrescente</option>
+										<option value="asc">Crescente</option>
+									</select>
+								</div>
+
+								<!-- Page Size -->
+								<div>
+									<label for="downloads-page-size" style="font-size: 0.875rem; color: hsl(var(--muted-foreground)); display: block; margin-bottom: 0.25rem;">
+										Por página:
+									</label>
+									<select id="downloads-page-size" class="select">
+										<option value="25" selected>25</option>
+										<option value="50">50</option>
+										<option value="100">100</option>
+									</select>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div id="downloads-loading" class="loading">
+						<div class="loading-spinner"></div>
+						<span style="margin-left: 0.5rem;">Carregando...</span>
+					</div>
+
+					<div id="downloads-error" class="error hidden"></div>
+
+					<div id="downloads-content" class="hidden">
+						<div class="card">
+							<div class="card-content">
+								<div class="table-container">
+									<table id="downloads-table">
+										<thead>
+											<tr>
+												<th class="sortable" data-sort="timestamp">Timestamp</th>
+												<th class="sortable" data-sort="url">URL</th>
+												<th class="text-center sortable" data-sort="statusCode">Status</th>
+												<th class="text-right sortable" data-sort="responseTime">Tempo (ms)</th>
+												<th>User Agent</th>
+												<th>Erro</th>
+											</tr>
+										</thead>
+										<tbody id="downloads-tbody"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+
+						<!-- Pagination -->
+						<div id="downloads-pagination" class="flex items-center justify-between mt-4">
+							<div style="font-size: 0.875rem; color: hsl(var(--muted-foreground));">
+								<span id="downloads-pagination-info"></span>
+							</div>
+							<div class="flex items-center gap-2">
+								<button id="downloads-prev-btn" class="btn btn-secondary">
+									Anterior
+								</button>
+								<span id="downloads-page-info" style="font-size: 0.875rem; padding: 0 1rem;"></span>
+								<button id="downloads-next-btn" class="btn btn-secondary">
+									Próxima
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<div id="downloads-empty" class="empty-state hidden">
+						<div class="empty-state-icon">📥</div>
+						<p class="empty-state-text">Nenhum download encontrado.</p>
 					</div>
 				</div>
 			</div>

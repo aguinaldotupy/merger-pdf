@@ -41,6 +41,41 @@ export interface ErrorEvent {
 	errorMessage: string | null;
 }
 
+export interface DownloadEvent {
+	id: string;
+	url: string;
+	statusCode: number;
+	timestamp: Date;
+	userAgent: string | null;
+	responseTime: number | null;
+	errorMessage: string | null;
+}
+
+export interface DownloadsFilters {
+	search?: string;
+	statusCode?: number;
+	statusRange?: "success" | "redirect" | "client-error" | "server-error";
+	dateFrom?: Date;
+	dateTo?: Date;
+}
+
+export interface DownloadsPagination {
+	page: number;
+	pageSize: number;
+	sortBy?: "timestamp" | "url" | "statusCode" | "responseTime";
+	sortOrder?: "asc" | "desc";
+}
+
+export interface DownloadsResponse {
+	data: DownloadEvent[];
+	pagination: {
+		page: number;
+		pageSize: number;
+		total: number;
+		totalPages: number;
+	};
+}
+
 export class AnalyticsService {
 	private prisma: PrismaClient;
 
@@ -209,6 +244,102 @@ export class AnalyticsService {
 		});
 
 		return events;
+	}
+
+	/**
+	 * Get paginated downloads with filters and sorting
+	 */
+	async getDownloads(
+		filters: DownloadsFilters = {},
+		pagination: DownloadsPagination = { page: 1, pageSize: 25 },
+	): Promise<DownloadsResponse> {
+		// Build where clause
+		const where: {
+			url?: { contains: string };
+			statusCode?: number | { gte?: number; lt?: number };
+			timestamp?: { gte?: Date; lte?: Date };
+		} = {};
+
+		// Text search in URL
+		if (filters.search) {
+			where.url = { contains: filters.search };
+		}
+
+		// Exact status code filter
+		if (filters.statusCode) {
+			where.statusCode = filters.statusCode;
+		}
+
+		// Status code range filter
+		if (filters.statusRange) {
+			switch (filters.statusRange) {
+				case "success":
+					where.statusCode = { gte: 200, lt: 300 };
+					break;
+				case "redirect":
+					where.statusCode = { gte: 300, lt: 400 };
+					break;
+				case "client-error":
+					where.statusCode = { gte: 400, lt: 500 };
+					break;
+				case "server-error":
+					where.statusCode = { gte: 500 };
+					break;
+			}
+		}
+
+		// Date range filter
+		if (filters.dateFrom || filters.dateTo) {
+			where.timestamp = {};
+			if (filters.dateFrom) {
+				where.timestamp.gte = filters.dateFrom;
+			}
+			if (filters.dateTo) {
+				where.timestamp.lte = filters.dateTo;
+			}
+		}
+
+		// Sorting
+		const sortBy = pagination.sortBy || "timestamp";
+		const sortOrder = pagination.sortOrder || "desc";
+		const orderBy = { [sortBy]: sortOrder };
+
+		// Pagination
+		const page = Math.max(1, pagination.page);
+		const pageSize = Math.min(100, Math.max(1, pagination.pageSize)); // Max 100 per page
+		const skip = (page - 1) * pageSize;
+
+		// Execute queries
+		const [data, total] = await Promise.all([
+			this.prisma.downloadEvent.findMany({
+				where,
+				orderBy,
+				skip,
+				take: pageSize,
+				select: {
+					id: true,
+					url: true,
+					statusCode: true,
+					timestamp: true,
+					userAgent: true,
+					responseTime: true,
+					errorMessage: true,
+				},
+			}),
+			this.prisma.downloadEvent.count({ where }),
+		]);
+
+		const totalPages = Math.ceil(total / pageSize);
+
+		return {
+			data,
+			pagination: {
+				page,
+				pageSize,
+				total,
+				totalPages,
+			},
+		};
 	}
 
 	/**

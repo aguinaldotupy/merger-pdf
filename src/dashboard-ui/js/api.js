@@ -53,6 +53,26 @@ const API = {
 		return response.data;
 	},
 
+	async getDownloads(filters = {}, pagination = {}) {
+		const params = new URLSearchParams();
+
+		// Pagination
+		if (pagination.page) params.append("page", pagination.page);
+		if (pagination.pageSize) params.append("pageSize", pagination.pageSize);
+		if (pagination.sortBy) params.append("sortBy", pagination.sortBy);
+		if (pagination.sortOrder) params.append("sortOrder", pagination.sortOrder);
+
+		// Filters
+		if (filters.search) params.append("search", filters.search);
+		if (filters.statusCode) params.append("statusCode", filters.statusCode);
+		if (filters.statusRange) params.append("statusRange", filters.statusRange);
+		if (filters.dateFrom) params.append("dateFrom", filters.dateFrom);
+		if (filters.dateTo) params.append("dateTo", filters.dateTo);
+
+		const response = await this.request(`/downloads?${params.toString()}`);
+		return response;
+	},
+
 	async checkHealth() {
 		const response = await this.request("/health");
 		return response.data;

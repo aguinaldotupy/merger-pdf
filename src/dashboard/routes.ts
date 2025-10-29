@@ -138,4 +138,78 @@ router.get("/errors", async (req: Request, res: Response) => {
 	}
 });
 
+/**
+ * Get paginated downloads with filters
+ */
+router.get("/downloads", async (req: Request, res: Response) => {
+	try {
+		// Parse pagination parameters
+		const page = Math.max(1, Number.parseInt(req.query.page as string, 10) || 1);
+		const pageSize = Math.min(
+			100,
+			Math.max(1, Number.parseInt(req.query.pageSize as string, 10) || 25),
+		);
+		const sortBy = (req.query.sortBy as string) || "timestamp";
+		const sortOrder = (req.query.sortOrder as string) === "asc" ? "asc" : "desc";
+
+		// Parse filters
+		const filters: {
+			search?: string;
+			statusCode?: number;
+			statusRange?: "success" | "redirect" | "client-error" | "server-error";
+			dateFrom?: Date;
+			dateTo?: Date;
+		} = {};
+
+		if (req.query.search) {
+			filters.search = req.query.search as string;
+		}
+
+		if (req.query.statusCode) {
+			filters.statusCode = Number.parseInt(req.query.statusCode as string, 10);
+		}
+
+		if (req.query.statusRange) {
+			filters.statusRange = req.query.statusRange as
+				| "success"
+				| "redirect"
+				| "client-error"
+				| "server-error";
+		}
+
+		if (req.query.dateFrom) {
+			filters.dateFrom = new Date(req.query.dateFrom as string);
+		}
+
+		if (req.query.dateTo) {
+			filters.dateTo = new Date(req.query.dateTo as string);
+		}
+
+		const result = await analyticsService.getDownloads(filters, {
+			page,
+			pageSize,
+			sortBy: sortBy as "timestamp" | "url" | "statusCode" | "responseTime",
+			sortOrder,
+		});
+
+		res.json({
+			success: true,
+			data: result.data,
+			pagination: result.pagination,
+			meta: {
+				timestamp: new Date().toISOString(),
+			},
+		});
+	} catch (error) {
+		console.error("Downloads query error:", error);
+		res.status(500).json({
+			success: false,
+			error: "Failed to fetch downloads",
+			meta: {
+				timestamp: new Date().toISOString(),
+			},
+		});
+	}
+});
+
 export default router;
