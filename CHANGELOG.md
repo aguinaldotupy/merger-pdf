@@ -1,3 +1,10 @@
+# [4.1.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.0.4...v4.1.0) (2025-10-29)
+
+
+### Features
+
+* enhance Dockerfile and Prisma setup for dynamic database provider configuration ([3395bb1](https://github.com/aguinaldotupy/merger-pdf/commit/3395bb1518ce3b599015b0ae4d29d2018d51ce4a))
+
 ## [4.0.4](https://github.com/aguinaldotupy/merger-pdf/compare/v4.0.3...v4.0.4) (2025-10-29)
 
 
