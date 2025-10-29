@@ -46,20 +46,24 @@ app.post("/", async (req: Request, res: Response) => {
 			keywords: keywords || undefined,
 		});
 
-		// Download and add all PDFs with analytics tracking
-		await Promise.all(
-			sources.map(async (source) => {
+		// Download all PDFs in parallel while preserving order
+		// Strategy: Download concurrently but add to merger sequentially in original order
+		const downloadResults = await Promise.all(
+			sources.map(async (source, index) => {
 				const startTime = Date.now();
 				try {
-					// Use PDFMerger's built-in download method (with axios, timeout, etc.)
-					await merger.addPdfFromUrl(source);
+					// Download PDF buffer
+					const { data } = await axios.get(source, {
+						responseType: "arraybuffer",
+						timeout: env.REQUEST_TIMEOUT,
+					});
 
 					// Record successful download analytics
 					const responseTime = Date.now() - startTime;
 					analyticsService
 						.recordDownloadEvent({
 							url: source,
-							statusCode: 200, // Success
+							statusCode: 200,
 							timestamp: new Date(),
 							userAgent: req.get("user-agent"),
 							responseTime,
@@ -67,6 +71,8 @@ app.post("/", async (req: Request, res: Response) => {
 						.catch((error) => {
 							console.error("Analytics recording failed:", error);
 						});
+
+					return { index, buffer: data, url: source, success: true };
 				} catch (error) {
 					// Record failed download analytics
 					const responseTime = Date.now() - startTime;
@@ -90,10 +96,21 @@ app.post("/", async (req: Request, res: Response) => {
 						});
 
 					console.error(`Error downloading PDF from ${source}:`, error);
-					// Continue with other PDFs even if one fails
+					return { index, error, url: source, success: false };
 				}
 			}),
 		);
+
+		// Add PDFs to merger in original order (sorted by index)
+		const successfulDownloads = downloadResults
+			.filter((result) => result.success)
+			.sort((a, b) => a.index - b.index);
+
+		for (const result of successfulDownloads) {
+			if (result.success && result.buffer) {
+				await merger.addPdfFromBuffer(result.buffer);
+			}
+		}
 
 		// Save the merged PDF to a file
 		const uuid = uuidv4();
