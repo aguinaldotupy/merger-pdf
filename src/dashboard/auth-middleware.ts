@@ -1,10 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
-
-// Default development token (insecure - change in production!)
-const DEFAULT_DEV_TOKEN = "dev-token-change-me-in-production-min32chars";
-
-let hasWarnedAboutDefaultToken = false;
+import { env } from "../env";
 
 export function authMiddleware(
 	req: Request,
@@ -12,29 +8,7 @@ export function authMiddleware(
 	next: NextFunction,
 ): void {
 	const token = req.headers["x-api-token"] as string;
-	const validToken = process.env.ANALYTICS_API_TOKEN || DEFAULT_DEV_TOKEN;
-
-	// Warn if using default token in production
-	if (
-		validToken === DEFAULT_DEV_TOKEN &&
-		process.env.NODE_ENV === "production" &&
-		!hasWarnedAboutDefaultToken
-	) {
-		hasWarnedAboutDefaultToken = true;
-		console.warn(
-			"⚠️  WARNING: Using default development token in production! Set ANALYTICS_API_TOKEN environment variable.",
-		);
-	}
-
-	// Validate token length (minimum 32 characters for security)
-	if (validToken.length < 32) {
-		console.error("ANALYTICS_API_TOKEN is too short (minimum 32 characters)");
-		res.status(500).json({
-			success: false,
-			error: "Server configuration error",
-		});
-		return;
-	}
+	const validToken = env.ANALYTICS_API_TOKEN;
 
 	// Check if token was provided
 	if (!token) {

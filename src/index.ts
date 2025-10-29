@@ -5,6 +5,7 @@ import express from "express";
 import type { Application, Request, Response } from "express";
 import { AnalyticsService } from "./analytics/service";
 import dashboardRoutes from "./dashboard/routes";
+import { env } from "./env";
 import { PDFMerger } from "./pdf-merger";
 import { toSlug, uuidv4 } from "./utils";
 
@@ -129,8 +130,6 @@ if (fs.existsSync(dashboardPath)) {
 	console.warn("Dashboard UI not found at src/dashboard-ui");
 }
 
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-	console.log(`Server is running on port ${PORT}`);
+app.listen(env.PORT, () => {
+	console.log(`Server is running on port ${env.PORT}`);
 });

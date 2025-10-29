@@ -51,11 +51,41 @@ This project is a Bun application that provides an API to merge multiple PDF fil
    Available variables:
    - `PORT`: Server port (default: 3000)
    - `REQUEST_TIMEOUT`: Timeout for PDF downloads in milliseconds (default: 10000)
+   - `DATABASE_URL`: Database connection string (required)
    - `DATABASE_PROVIDER`: Database type - `sqlite`, `postgresql`, or `mysql` (default: sqlite)
-   - `DATABASE_URL`: Database connection string (default: `file:../database/analytics.db`)
+   - `NODE_ENV`: Environment - `development`, `production`, or `test` (default: development)
    - `ANALYTICS_API_TOKEN`: Token for accessing the analytics dashboard
      - Default (dev): `dev-token-change-me-in-production-min32chars`
-     - ⚠️ **IMPORTANT**: Change this in production! Generate with: `openssl rand -hex 32`
+     - ⚠️ **IMPORTANT**: Minimum 32 characters required. Change this in production!
+     - Generate with: `openssl rand -hex 32`
+
+### Environment Validation
+
+This project uses **Zod** for type-safe environment variable validation. All environment variables are validated at startup, ensuring:
+
+- ✅ **Type Safety**: TypeScript knows the exact types of all env vars
+- ✅ **Runtime Validation**: Invalid values are caught immediately with clear error messages
+- ✅ **Default Values**: Sensible defaults for development
+- ✅ **Security**: Required minimum lengths for sensitive values like API tokens
+
+**Example validation error:**
+
+```bash
+❌ Invalid environment variables:
+{
+  formErrors: [],
+  fieldErrors: {
+    ANALYTICS_API_TOKEN: [ 'ANALYTICS_API_TOKEN must be at least 32 characters' ]
+  }
+}
+Error: Invalid environment variables
+```
+
+**Skipping validation** (useful for Docker builds):
+
+```bash
+SKIP_ENV_VALIDATION=true bun run build
+```
 
 ## Usage
 
@@ -78,12 +108,14 @@ No additional setup required. The database file will be created automatically at
 #### Using PostgreSQL
 
 1. Update your `.env`:
+
    ```bash
    DATABASE_PROVIDER=postgresql
    DATABASE_URL="postgresql://user:password@localhost:5432/analytics?schema=public"
    ```
 
 2. Create the database and run migrations:
+
    ```bash
    createdb analytics
    rm -rf prisma/migrations
@@ -93,21 +125,25 @@ No additional setup required. The database file will be created automatically at
 #### Using MySQL
 
 1. Update your `.env`:
+
    ```bash
    DATABASE_PROVIDER=mysql
    DATABASE_URL="mysql://user:password@localhost:3306/analytics"
    ```
 
 2. Create the database and run migrations:
+
    ```sql
    CREATE DATABASE analytics;
    ```
+
    ```bash
    rm -rf prisma/migrations
    bun run prisma:migrate
    ```
 
 **Note:** When switching database providers:
+
 1. Update `DATABASE_PROVIDER` and `DATABASE_URL` in `.env`
 2. Delete the `prisma/migrations` directory
 3. Run `bun run prisma:migrate` to create new migrations for the target database
@@ -117,11 +153,13 @@ No additional setup required. The database file will be created automatically at
 Access the analytics dashboard at `http://localhost:3000/dashboard`
 
 **Authentication:**
+
 - **Development**: Use the default token `dev-token-change-me-in-production-min32chars`
 - **Production**: Set a secure token with `ANALYTICS_API_TOKEN` environment variable
 - Login by entering the token in the dashboard login page
 
 **Features:**
+
 - **Overview Tab**: View download statistics by status code
 - **Top URLs Tab**: See most accessed PDF URLs with success rates
 - **Error Tracking Tab**: Monitor failed downloads and error messages
@@ -170,7 +208,7 @@ The project includes a command-line interface for merging PDFs directly from you
 
 ### Running the CLI
 
-#### Using Bun directly:
+#### Using Bun directly
 
 ```bash
 # Build the project first
@@ -180,7 +218,7 @@ bun run build
 bun cli <input_file_or_directory> [output.pdf]
 ```
 
-#### Using Docker:
+#### Using Docker
 
 ```bash
 # Build the Docker image
@@ -191,6 +229,17 @@ docker run -v $(pwd):/data merger-pdf merge-pdf /data/input /data/output.pdf
 ```
 
 ## Docker Deployment
+
+### Environment Variables in Docker
+
+**Important:** Environment variables like `ANALYTICS_API_TOKEN` should be passed at **runtime** using `docker run --env` or `--env-file`, not baked into the image during build.
+
+This is because:
+- 🔒 **Security**: Tokens should not be committed to images
+- 🔄 **Flexibility**: Same image can be used in different environments
+- ✅ **Validation**: Zod validates env vars when the container starts
+
+The Dockerfile uses `SKIP_ENV_VALIDATION=true` during the build process since environment variables are not yet available. Validation happens when you start the container.
 
 ### Running the API Server with Docker
 
@@ -210,6 +259,7 @@ docker build -f docker/Dockerfile --build-arg DB_PROVIDER=mysql -t merger-pdf:my
 ```
 
 **Running with SQLite:**
+
 ```bash
 docker run -d \
   -p 3000:3000 \
@@ -222,6 +272,7 @@ docker run -d \
 ```
 
 **Running with PostgreSQL:**
+
 ```bash
 docker run -d \
   -p 3000:3000 \
@@ -232,6 +283,7 @@ docker run -d \
 ```
 
 **Running with MySQL:**
+
 ```bash
 docker run -d \
   -p 3000:3000 \
@@ -260,6 +312,7 @@ docker run -d \
    - `REQUEST_TIMEOUT`: PDF download timeout in ms (default: 30000)
 
 4. **Quick Restart** (your example):
+
    ```bash
    docker stop merger-pdf && \
    docker rm merger-pdf && \
@@ -269,11 +322,13 @@ docker run -d \
      --log-opt max-size=10m \
      aguinaldotupy/merger-pdf:v3.0.1
    ```
+
    Migrations will run automatically on startup! ✅
 
 ### Docker Compose Examples
 
 **SQLite (default):**
+
 ```yaml
 version: '3.8'
 services:
@@ -295,6 +350,7 @@ services:
 ```
 
 **PostgreSQL:**
+
 ```yaml
 version: '3.8'
 services:

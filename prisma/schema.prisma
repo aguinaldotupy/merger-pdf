@@ -1,6 +1,6 @@
 // Prisma schema for PDF Download Analytics
-// Default: SQLite
-// To use PostgreSQL or MySQL, change the provider below and run: bun run prisma:migrate
+// The generator MUST always be prisma-client-js
+// The datasource provider (sqlite/postgresql/mysql) is changed during Docker build
 
 generator client {
   provider = "prisma-client-js"

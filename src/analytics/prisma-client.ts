@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { env } from "../env";
 
 // Prisma client singleton for analytics database
 let prisma: PrismaClient;
@@ -21,11 +22,11 @@ export function getPrismaClient(): PrismaClient {
 
 	// Initialize the client synchronously for the first caller
 	prisma = new PrismaClient({
-		log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+		log: env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
 	});
 
-	// Enable WAL mode for better concurrency
-	if (process.env.DATABASE_PROVIDER === "sqlite") {
+	// Enable WAL mode for better concurrency (SQLite only)
+	if (env.DATABASE_PROVIDER === "sqlite") {
 		prisma
 			.$queryRawUnsafe("PRAGMA journal_mode=WAL;")
 			.catch((error: unknown) => {
@@ -50,12 +51,11 @@ export async function getPrismaClientAsync(): Promise<PrismaClient> {
 	// Start initialization
 	prismaInitPromise = (async () => {
 		const client = new PrismaClient({
-			log:
-				process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+			log: env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
 		});
 
-		// Enable WAL mode for better concurrency
-		if (process.env.DATABASE_PROVIDER === "sqlite") {
+		// Enable WAL mode for better concurrency (SQLite only)
+		if (env.DATABASE_PROVIDER === "sqlite") {
 			try {
 				await client.$queryRawUnsafe("PRAGMA journal_mode=WAL;");
 			} catch (error) {
