@@ -1,3 +1,10 @@
+## [4.1.3](https://github.com/aguinaldotupy/merger-pdf/compare/v4.1.2...v4.1.3) (2025-10-29)
+
+
+### Bug Fixes
+
+* enhance PDF download process with analytics tracking and error handling ([d527bc5](https://github.com/aguinaldotupy/merger-pdf/commit/d527bc5a3fb34c111a15f9ff5c31baa64a4d3ba8))
+
 ## [4.1.2](https://github.com/aguinaldotupy/merger-pdf/compare/v4.1.1...v4.1.2) (2025-10-29)
 
 
