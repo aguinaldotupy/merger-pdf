@@ -1,3 +1,10 @@
+## [4.1.1](https://github.com/aguinaldotupy/merger-pdf/compare/v4.1.0...v4.1.1) (2025-10-29)
+
+
+### Bug Fixes
+
+* correct command syntax for database readiness check in entrypoint script ([bfe2b48](https://github.com/aguinaldotupy/merger-pdf/commit/bfe2b483acf80586bfb2417da7fe5d598b627083))
+
 # [4.1.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.0.4...v4.1.0) (2025-10-29)
 
 
