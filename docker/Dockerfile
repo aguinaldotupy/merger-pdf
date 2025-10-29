@@ -1,10 +1,12 @@
 FROM oven/bun:1.1.45-alpine
 
-# Database provider: sqlite, postgresql, or mysql
-ARG DB_PROVIDER=sqlite
+ARG DATABASE_URL="file:../database/analytics.db"
+ARG REQUEST_TIMEOUT=30000
 
-ENV REQUEST_TIMEOUT=30000
+ENV NODE_ENV=production
+ENV REQUEST_TIMEOUT=${REQUEST_TIMEOUT}
 ENV DATABASE_PROVIDER=${DB_PROVIDER}
+ENV DATABASE_URL=${DATABASE_URL}
 
 WORKDIR /app
 
