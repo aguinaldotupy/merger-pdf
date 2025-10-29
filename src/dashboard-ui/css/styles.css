@@ -208,6 +208,11 @@ body {
 	margin: 0;
 }
 
+.stat-card.card-info {
+	border-left: 4px solid #3b82f6;
+	background: hsl(var(--card));
+}
+
 .stat-card.card-success {
 	border-left: 4px solid #22c55e;
 	background: hsl(var(--card));
@@ -218,13 +223,13 @@ body {
 	background: hsl(var(--card));
 }
 
-.stat-card.card-error {
-	border-left: 4px solid #ef4444;
+.stat-card.card-client-error {
+	border-left: 4px solid #f97316;
 	background: hsl(var(--card));
 }
 
-.stat-card.card-info {
-	border-left: 4px solid hsl(var(--primary));
+.stat-card.card-server-error {
+	border-left: 4px solid #ef4444;
 	background: hsl(var(--card));
 }
 

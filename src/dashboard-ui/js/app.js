@@ -280,11 +280,11 @@ const App = {
 				<div class="stat-label">Redirecionamentos (3xx)</div>
 				<div class="stat-value">${redirect.toLocaleString()}</div>
 			</div>
-			<div class="stat-card card-error">
+			<div class="stat-card card-client-error">
 				<div class="stat-label">Erro Cliente (4xx)</div>
 				<div class="stat-value">${clientError.toLocaleString()}</div>
 			</div>
-			<div class="stat-card card-error">
+			<div class="stat-card card-server-error">
 				<div class="stat-label">Erro Servidor (5xx)</div>
 				<div class="stat-value">${serverError.toLocaleString()}</div>
 			</div>
