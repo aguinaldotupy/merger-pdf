@@ -1,3 +1,10 @@
+## [4.1.2](https://github.com/aguinaldotupy/merger-pdf/compare/v4.1.1...v4.1.2) (2025-10-29)
+
+
+### Bug Fixes
+
+* improve database readiness check in entrypoint script for better clarity and handling ([f6216e1](https://github.com/aguinaldotupy/merger-pdf/commit/f6216e12c2bcaa6be08ea2eefee085a6d0b33881))
+
 ## [4.1.1](https://github.com/aguinaldotupy/merger-pdf/compare/v4.1.0...v4.1.1) (2025-10-29)
 
 
