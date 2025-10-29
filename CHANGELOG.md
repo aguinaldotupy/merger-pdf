@@ -1,3 +1,10 @@
+## [4.0.4](https://github.com/aguinaldotupy/merger-pdf/compare/v4.0.3...v4.0.4) (2025-10-29)
+
+
+### Bug Fixes
+
+* remove DATABASE_PROVIDER environment variable from Dockerfile ([68d79f4](https://github.com/aguinaldotupy/merger-pdf/commit/68d79f4ecbc23412d0d2a92f35bf08a5c6ff9bc8))
+
 ## [4.0.3](https://github.com/aguinaldotupy/merger-pdf/compare/v4.0.2...v4.0.3) (2025-10-29)
 
 
