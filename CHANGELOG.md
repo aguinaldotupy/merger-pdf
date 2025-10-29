@@ -1,3 +1,10 @@
+# [4.2.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.1.3...v4.2.0) (2025-10-29)
+
+
+### Features
+
+* add Downloads tab with advanced filtering and sorting ([2f48291](https://github.com/aguinaldotupy/merger-pdf/commit/2f48291c6ff9cdfdff86bd3aeeb3add65e2c4e79))
+
 ## [4.1.3](https://github.com/aguinaldotupy/merger-pdf/compare/v4.1.2...v4.1.3) (2025-10-29)
 
 
