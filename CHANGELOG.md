@@ -1,3 +1,16 @@
+# [4.3.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.2.0...v4.3.0) (2025-10-29)
+
+
+### Bug Fixes
+
+* differentiate error colors in downloads chart ([892b24d](https://github.com/aguinaldotupy/merger-pdf/commit/892b24de01d6c71437475b75230f5b05afa145c3)), closes [#f97316](https://github.com/aguinaldotupy/merger-pdf/issues/f97316) [#ef4444](https://github.com/aguinaldotupy/merger-pdf/issues/ef4444)
+* match stat card colors with chart line colors ([9e059fc](https://github.com/aguinaldotupy/merger-pdf/commit/9e059fcf90d020f3495198b46e154fd3cc9e2c9a)), closes [#3b82f6](https://github.com/aguinaldotupy/merger-pdf/issues/3b82f6) [#22c55e](https://github.com/aguinaldotupy/merger-pdf/issues/22c55e) [#f59e0b](https://github.com/aguinaldotupy/merger-pdf/issues/f59e0b) [#f97316](https://github.com/aguinaldotupy/merger-pdf/issues/f97316) [#ef4444](https://github.com/aguinaldotupy/merger-pdf/issues/ef4444)
+
+
+### Features
+
+* add downloads trend chart with flexible time grouping ([c04b0ff](https://github.com/aguinaldotupy/merger-pdf/commit/c04b0ff6e2b04f783a3584b946befe9ea9f9c638))
+
 # [4.2.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.1.3...v4.2.0) (2025-10-29)
 
 
