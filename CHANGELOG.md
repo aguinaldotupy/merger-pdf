@@ -1,3 +1,10 @@
+## [4.0.3](https://github.com/aguinaldotupy/merger-pdf/compare/v4.0.2...v4.0.3) (2025-10-29)
+
+
+### Bug Fixes
+
+* update Dockerfile to set DATABASE_URL and REQUEST_TIMEOUT as arguments ([1a7d853](https://github.com/aguinaldotupy/merger-pdf/commit/1a7d85325d69ac3201859caa51c4603c5fefdbcf))
+
 ## [4.0.2](https://github.com/aguinaldotupy/merger-pdf/compare/v4.0.1...v4.0.2) (2025-10-28)
 
 
