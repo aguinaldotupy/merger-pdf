@@ -73,6 +73,11 @@ const API = {
 		return response;
 	},
 
+	async getChartData(groupBy = "week") {
+		const response = await this.request(`/chart-data?groupBy=${groupBy}`);
+		return response.data;
+	},
+
 	async checkHealth() {
 		const response = await this.request("/health");
 		return response.data;

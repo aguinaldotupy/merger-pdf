@@ -76,6 +76,26 @@ export interface DownloadsResponse {
 	};
 }
 
+export interface ChartDataPoint {
+	period: string;
+	total: number;
+	success: number;
+	redirect: number;
+	clientError: number;
+	serverError: number;
+}
+
+export interface ChartData {
+	labels: string[];
+	datasets: {
+		total: number[];
+		success: number[];
+		redirect: number[];
+		clientError: number[];
+		serverError: number[];
+	};
+}
+
 export class AnalyticsService {
 	private prisma: PrismaClient;
 
@@ -340,6 +360,170 @@ export class AnalyticsService {
 				totalPages,
 			},
 		};
+	}
+
+	/**
+	 * Get chart data grouped by hour, day, week, or month
+	 */
+	async getChartData(
+		groupBy: "hour" | "day" | "week" | "month",
+	): Promise<ChartData> {
+		// Get all download events
+		const events = await this.prisma.downloadEvent.findMany({
+			select: {
+				timestamp: true,
+				statusCode: true,
+			},
+			orderBy: { timestamp: "asc" },
+		});
+
+		if (events.length === 0) {
+			return {
+				labels: [],
+				datasets: {
+					total: [],
+					success: [],
+					redirect: [],
+					clientError: [],
+					serverError: [],
+				},
+			};
+		}
+
+		// Group events by period
+		const grouped = new Map<string, ChartDataPoint>();
+
+		for (const event of events) {
+			const period = this.getPeriodKey(event.timestamp, groupBy);
+
+			if (!grouped.has(period)) {
+				grouped.set(period, {
+					period,
+					total: 0,
+					success: 0,
+					redirect: 0,
+					clientError: 0,
+					serverError: 0,
+				});
+			}
+
+			const point = grouped.get(period);
+			if (point) {
+				point.total++;
+
+				if (event.statusCode >= 200 && event.statusCode < 300) {
+					point.success++;
+				} else if (event.statusCode >= 300 && event.statusCode < 400) {
+					point.redirect++;
+				} else if (event.statusCode >= 400 && event.statusCode < 500) {
+					point.clientError++;
+				} else if (event.statusCode >= 500) {
+					point.serverError++;
+				}
+			}
+		}
+
+		// Convert to arrays for Chart.js
+		const sortedEntries = Array.from(grouped.entries()).sort(([a], [b]) =>
+			a.localeCompare(b),
+		);
+
+		const labels = sortedEntries.map(([period]) =>
+			this.formatPeriodLabel(period, groupBy),
+		);
+		const datasets = {
+			total: sortedEntries.map(([, point]) => point.total),
+			success: sortedEntries.map(([, point]) => point.success),
+			redirect: sortedEntries.map(([, point]) => point.redirect),
+			clientError: sortedEntries.map(([, point]) => point.clientError),
+			serverError: sortedEntries.map(([, point]) => point.serverError),
+		};
+
+		return { labels, datasets };
+	}
+
+	/**
+	 * Get period key for grouping (YYYY-MM-DD HH, YYYY-MM-DD, YYYY-Www, or YYYY-MM)
+	 */
+	private getPeriodKey(
+		date: Date,
+		groupBy: "hour" | "day" | "week" | "month",
+	): string {
+		const d = new Date(date);
+
+		if (groupBy === "hour") {
+			// Format: YYYY-MM-DD HH
+			const datePart = d.toISOString().split("T")[0];
+			const hour = d.getHours().toString().padStart(2, "0");
+			return `${datePart} ${hour}`;
+		}
+
+		if (groupBy === "day") {
+			// Format: YYYY-MM-DD
+			return d.toISOString().split("T")[0];
+		}
+
+		if (groupBy === "week") {
+			// Format: YYYY-Www (ISO week)
+			const year = d.getFullYear();
+			const startOfYear = new Date(year, 0, 1);
+			const days = Math.floor(
+				(d.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000),
+			);
+			const week = Math.ceil((days + startOfYear.getDay() + 1) / 7);
+			return `${year}-W${week.toString().padStart(2, "0")}`;
+		}
+
+		// month
+		// Format: YYYY-MM
+		const year = d.getFullYear();
+		const month = (d.getMonth() + 1).toString().padStart(2, "0");
+		return `${year}-${month}`;
+	}
+
+	/**
+	 * Format period label for display
+	 */
+	private formatPeriodLabel(
+		period: string,
+		groupBy: "hour" | "day" | "week" | "month",
+	): string {
+		if (groupBy === "hour") {
+			// Convert YYYY-MM-DD HH to DD/MM HH:00
+			const [datePart, hour] = period.split(" ");
+			const [year, month, day] = datePart.split("-");
+			return `${day}/${month} ${hour}:00`;
+		}
+
+		if (groupBy === "day") {
+			// Convert YYYY-MM-DD to DD/MM
+			const [year, month, day] = period.split("-");
+			return `${day}/${month}`;
+		}
+
+		if (groupBy === "week") {
+			// Convert YYYY-Www to Semana w
+			const week = period.split("-W")[1];
+			return `Semana ${week}`;
+		}
+
+		// month - Convert YYYY-MM to MM/YYYY
+		const [year, month] = period.split("-");
+		const monthNames = [
+			"Jan",
+			"Fev",
+			"Mar",
+			"Abr",
+			"Mai",
+			"Jun",
+			"Jul",
+			"Ago",
+			"Set",
+			"Out",
+			"Nov",
+			"Dez",
+		];
+		return `${monthNames[Number.parseInt(month, 10) - 1]}/${year}`;
 	}
 
 	/**

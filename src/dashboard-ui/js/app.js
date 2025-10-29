@@ -3,6 +3,7 @@ const App = {
 	currentDownloadsPage: 1,
 	totalDownloadsPages: 1,
 	downloadsSearchTimeout: null,
+	downloadsChart: null,
 
 	init() {
 		// Initialize Auth module to restore token from sessionStorage
@@ -64,14 +65,21 @@ const App = {
 			this.loadErrors();
 		});
 
-		// Downloads filters and pagination
-		document.getElementById("downloads-search").addEventListener("input", () => {
-			clearTimeout(this.downloadsSearchTimeout);
-			this.downloadsSearchTimeout = setTimeout(() => {
-				this.currentDownloadsPage = 1;
-				this.loadDownloads();
-			}, 500);
+		// Chart grouping selector
+		document.getElementById("chart-grouping").addEventListener("change", () => {
+			this.loadChart();
 		});
+
+		// Downloads filters and pagination
+		document
+			.getElementById("downloads-search")
+			.addEventListener("input", () => {
+				clearTimeout(this.downloadsSearchTimeout);
+				this.downloadsSearchTimeout = setTimeout(() => {
+					this.currentDownloadsPage = 1;
+					this.loadDownloads();
+				}, 500);
+			});
 		document
 			.getElementById("downloads-status-range")
 			.addEventListener("change", () => {
@@ -114,12 +122,16 @@ const App = {
 			});
 
 		// Downloads table header sorting
-		document.querySelectorAll("#downloads-table th.sortable").forEach((th) => {
+		for (const th of document.querySelectorAll(
+			"#downloads-table th.sortable",
+		)) {
 			th.addEventListener("click", () => {
 				const sortBy = th.dataset.sort;
-				const currentSortBy = document.getElementById("downloads-sort-by").value;
-				const currentSortOrder =
-					document.getElementById("downloads-sort-order").value;
+				const currentSortBy =
+					document.getElementById("downloads-sort-by").value;
+				const currentSortOrder = document.getElementById(
+					"downloads-sort-order",
+				).value;
 
 				// Toggle order if clicking same column, otherwise default to desc
 				let newSortOrder = "desc";
@@ -135,7 +147,7 @@ const App = {
 				this.currentDownloadsPage = 1;
 				this.loadDownloads();
 			});
-		});
+		}
 	},
 
 	checkAuth() {
@@ -234,6 +246,7 @@ const App = {
 			}
 
 			this.renderOverview(data);
+			this.loadChart();
 			content.classList.remove("hidden");
 			loading.classList.add("hidden");
 		} catch (err) {
@@ -255,23 +268,23 @@ const App = {
 		// Render stat cards
 		const statsGrid = document.getElementById("stats-grid");
 		statsGrid.innerHTML = `
-			<div class="stat-card info">
+			<div class="stat-card card-info">
 				<div class="stat-label">Total de Downloads</div>
 				<div class="stat-value">${total.toLocaleString()}</div>
 			</div>
-			<div class="stat-card success">
+			<div class="stat-card card-success">
 				<div class="stat-label">Sucesso (2xx)</div>
 				<div class="stat-value">${success.toLocaleString()}</div>
 			</div>
-			<div class="stat-card warning">
+			<div class="stat-card card-warning">
 				<div class="stat-label">Redirecionamentos (3xx)</div>
 				<div class="stat-value">${redirect.toLocaleString()}</div>
 			</div>
-			<div class="stat-card error">
+			<div class="stat-card card-error">
 				<div class="stat-label">Erro Cliente (4xx)</div>
 				<div class="stat-value">${clientError.toLocaleString()}</div>
 			</div>
-			<div class="stat-card error">
+			<div class="stat-card card-error">
 				<div class="stat-label">Erro Servidor (5xx)</div>
 				<div class="stat-value">${serverError.toLocaleString()}</div>
 			</div>
@@ -297,6 +310,119 @@ const App = {
 			`;
 			})
 			.join("");
+	},
+
+	async loadChart() {
+		try {
+			const groupBy = document.getElementById("chart-grouping").value;
+			const data = await API.getChartData(groupBy);
+
+			this.renderChart(data);
+		} catch (err) {
+			console.error("Error loading chart data:", err);
+		}
+	},
+
+	renderChart(data) {
+		const ctx = document.getElementById("downloads-chart");
+
+		// Destroy previous chart instance if exists
+		if (this.downloadsChart) {
+			this.downloadsChart.destroy();
+		}
+
+		// Create new chart
+		this.downloadsChart = new Chart(ctx, {
+			type: "line",
+			data: {
+				labels: data.labels,
+				datasets: [
+					{
+						label: "Total",
+						data: data.datasets.total,
+						borderColor: "#3b82f6",
+						backgroundColor: "rgba(59, 130, 246, 0.1)",
+						borderWidth: 2,
+						tension: 0.3,
+					},
+					{
+						label: "Sucesso (2xx)",
+						data: data.datasets.success,
+						borderColor: "#22c55e",
+						backgroundColor: "rgba(34, 197, 94, 0.1)",
+						borderWidth: 2,
+						tension: 0.3,
+					},
+					{
+						label: "Redirecionamento (3xx)",
+						data: data.datasets.redirect,
+						borderColor: "#f59e0b",
+						backgroundColor: "rgba(245, 158, 11, 0.1)",
+						borderWidth: 2,
+						tension: 0.3,
+					},
+					{
+						label: "Erro Cliente (4xx)",
+						data: data.datasets.clientError,
+						borderColor: "#ef4444",
+						backgroundColor: "rgba(239, 68, 68, 0.1)",
+						borderWidth: 2,
+						tension: 0.3,
+					},
+					{
+						label: "Erro Servidor (5xx)",
+						data: data.datasets.serverError,
+						borderColor: "#dc2626",
+						backgroundColor: "rgba(220, 38, 38, 0.1)",
+						borderWidth: 2,
+						tension: 0.3,
+					},
+				],
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				interaction: {
+					mode: "index",
+					intersect: false,
+				},
+				plugins: {
+					legend: {
+						position: "top",
+						labels: {
+							usePointStyle: true,
+							padding: 15,
+						},
+					},
+					tooltip: {
+						backgroundColor: "rgba(0, 0, 0, 0.8)",
+						padding: 12,
+						titleFont: {
+							size: 14,
+						},
+						bodyFont: {
+							size: 13,
+						},
+					},
+				},
+				scales: {
+					y: {
+						beginAtZero: true,
+						ticks: {
+							precision: 0,
+						},
+						grid: {
+							color: "rgba(0, 0, 0, 0.05)",
+						},
+					},
+					x: {
+						grid: {
+							display: false,
+						},
+					},
+				},
+			},
+		});
 	},
 
 	async loadTopUrls() {
@@ -460,7 +586,9 @@ const App = {
 		try {
 			// Get filter values
 			const search = document.getElementById("downloads-search").value.trim();
-			const statusRange = document.getElementById("downloads-status-range").value;
+			const statusRange = document.getElementById(
+				"downloads-status-range",
+			).value;
 			const sortBy = document.getElementById("downloads-sort-by").value;
 			const sortOrder = document.getElementById("downloads-sort-order").value;
 			const pageSize = Number.parseInt(
@@ -503,9 +631,11 @@ const App = {
 		const sortOrder = document.getElementById("downloads-sort-order").value;
 
 		// Remove all sort indicators
-		document.querySelectorAll("#downloads-table th.sortable").forEach((th) => {
+		for (const th of document.querySelectorAll(
+			"#downloads-table th.sortable",
+		)) {
 			th.classList.remove("sorted-asc", "sorted-desc");
-		});
+		}
 
 		// Add indicator to current sorted column
 		const currentTh = document.querySelector(
@@ -535,7 +665,9 @@ const App = {
 				const escapedUrl = this.escapeHtml(item.url);
 				const userAgent = item.userAgent || "-";
 				const truncatedUserAgent =
-					userAgent.length > 50 ? userAgent.substring(0, 50) + "..." : userAgent;
+					userAgent.length > 50
+						? `${userAgent.substring(0, 50)}...`
+						: userAgent;
 				const responseTime = item.responseTime
 					? item.responseTime.toLocaleString()
 					: "-";
@@ -545,7 +677,7 @@ const App = {
 					: "-";
 				const truncatedError =
 					escapedErrorMessage.length > 50
-						? escapedErrorMessage.substring(0, 50) + "..."
+						? `${escapedErrorMessage.substring(0, 50)}...`
 						: escapedErrorMessage;
 
 				return `

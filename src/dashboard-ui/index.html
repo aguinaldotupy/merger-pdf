@@ -100,6 +100,30 @@
 
 						<div class="card">
 							<div class="card-header">
+								<div class="flex items-center justify-between">
+									<h3 class="card-title">Tendência de Downloads</h3>
+									<div class="flex items-center gap-2">
+										<label for="chart-grouping" style="font-size: 0.875rem; color: hsl(var(--muted-foreground));">
+											Agrupar por:
+										</label>
+										<select id="chart-grouping" class="select">
+											<option value="hour">Hora</option>
+											<option value="day">Dia</option>
+											<option value="week" selected>Semana</option>
+											<option value="month">Mês</option>
+										</select>
+									</div>
+								</div>
+							</div>
+							<div class="card-content">
+								<div style="position: relative; height: 400px;">
+									<canvas id="downloads-chart"></canvas>
+								</div>
+							</div>
+						</div>
+
+						<div class="card">
+							<div class="card-header">
 								<h3 class="card-title">Detalhamento por Status Code</h3>
 							</div>
 							<div class="card-content">
@@ -381,6 +405,7 @@
 		</main>
 	</div>
 
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 	<script src="/dashboard/js/api.js"></script>
 	<script src="/dashboard/js/auth.js"></script>
 	<script src="/dashboard/js/app.js"></script>

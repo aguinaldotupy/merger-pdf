@@ -139,18 +139,64 @@ router.get("/errors", async (req: Request, res: Response) => {
 });
 
 /**
+ * Get chart data with grouping (day/week/month)
+ */
+router.get("/chart-data", async (req: Request, res: Response) => {
+	try {
+		const groupBy = (req.query.groupBy as string) || "week";
+
+		// Validate groupBy parameter
+		if (!["hour", "day", "week", "month"].includes(groupBy)) {
+			return res.status(400).json({
+				success: false,
+				error:
+					'Invalid groupBy parameter. Must be "hour", "day", "week", or "month"',
+				meta: {
+					timestamp: new Date().toISOString(),
+				},
+			});
+		}
+
+		const chartData = await analyticsService.getChartData(
+			groupBy as "hour" | "day" | "week" | "month",
+		);
+
+		res.json({
+			success: true,
+			data: chartData,
+			meta: {
+				timestamp: new Date().toISOString(),
+			},
+		});
+	} catch (error) {
+		console.error("Chart data query error:", error);
+		res.status(500).json({
+			success: false,
+			error: "Failed to fetch chart data",
+			meta: {
+				timestamp: new Date().toISOString(),
+			},
+		});
+	}
+});
+
+/**
  * Get paginated downloads with filters
  */
 router.get("/downloads", async (req: Request, res: Response) => {
 	try {
 		// Parse pagination parameters
-		const page = Math.max(1, Number.parseInt(req.query.page as string, 10) || 1);
+		const page = Math.max(
+			1,
+			Number.parseInt(req.query.page as string, 10) || 1,
+		);
 		const pageSize = Math.min(
 			100,
 			Math.max(1, Number.parseInt(req.query.pageSize as string, 10) || 25),
 		);
 		const sortBy = (req.query.sortBy as string) || "timestamp";
-		const sortOrder = (req.query.sortOrder as string) === "asc" ? "asc" : "desc";
+		const sortOrder =
+			(req.query.sortOrder as string) === "asc" ? "asc" : "desc";
 
 		// Parse filters
 		const filters: {
