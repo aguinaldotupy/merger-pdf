@@ -100,6 +100,9 @@ bun run release  # Uses semantic-release
 
 - `PORT`: HTTP server port (default: 3000)
 - `REQUEST_TIMEOUT`: Axios timeout in milliseconds for URL downloads (default: 10000)
+- `NODE_TLS_REJECT_UNAUTHORIZED`: SSL certificate validation (default: "1" - enabled)
+  - Set to "0" to disable SSL certificate validation (use only for development/trusted URLs)
+  - Set to "1" or omit for production (enables full SSL validation)
 
 ## Docker
 

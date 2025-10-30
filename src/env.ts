@@ -12,6 +12,14 @@ const envSchema = z.object({
 	PORT: z.coerce.number().positive().default(3000),
 	REQUEST_TIMEOUT: z.coerce.number().positive().default(10000),
 
+	// SSL/TLS Configuration
+	NODE_TLS_REJECT_UNAUTHORIZED: z
+		.string()
+		.optional()
+		.transform((val) => val !== "0")
+		.default(true)
+		.transform((val) => val === true),
+
 	// Database Configuration
 	DATABASE_PROVIDER: z
 		.enum(["sqlite", "postgresql", "mysql"])

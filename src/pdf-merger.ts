@@ -1,10 +1,27 @@
 import fs from "node:fs";
+import http from "node:http";
 import https from "node:https";
 import axios from "axios";
 import { PDFDocument } from "pdf-lib";
 import { env } from "./env";
 
-const httpsAgent = new https.Agent({ rejectUnauthorized: false });
+// HTTP Agent (sem SSL)
+const httpAgent = new http.Agent({
+	keepAlive: true,
+	timeout: env.REQUEST_TIMEOUT || 30000,
+});
+
+// HTTPS Agent (com SSL configurável via NODE_TLS_REJECT_UNAUTHORIZED)
+// Se NODE_TLS_REJECT_UNAUTHORIZED=0, desabilita validação de certificados
+const httpsAgent = new https.Agent({
+	rejectUnauthorized: env.NODE_TLS_REJECT_UNAUTHORIZED,
+	keepAlive: true,
+	timeout: env.REQUEST_TIMEOUT || 30000,
+	// Ignora erros de certificado apenas se NODE_TLS_REJECT_UNAUTHORIZED=false
+	checkServerIdentity: env.NODE_TLS_REJECT_UNAUTHORIZED
+		? undefined
+		: () => undefined,
+});
 
 export interface PDFMetadata {
 	title?: string;
@@ -65,8 +82,12 @@ export class PDFMerger {
 		try {
 			const { data } = await axios.get(url, {
 				responseType: "arraybuffer",
+				httpAgent,
 				httpsAgent,
 				timeout: this.getTimeout(),
+				maxRedirects: 5,
+				validateStatus: (status) => status < 400,
+				proxy: false,
 			});
 			await this.addPdfFromBuffer(data);
 		} catch (error) {
