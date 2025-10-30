@@ -1,3 +1,10 @@
+# [4.4.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.3.0...v4.4.0) (2025-10-30)
+
+
+### Features
+
+* add SSL/TLS configuration support and update agents in PDF merger ([387297c](https://github.com/aguinaldotupy/merger-pdf/commit/387297c7022de73f3241780fc1071df0ae0b3483))
+
 # [4.3.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.2.0...v4.3.0) (2025-10-29)
 
 
