@@ -1,3 +1,10 @@
+# [4.5.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.4.0...v4.5.0) (2025-11-10)
+
+
+### Features
+
+* add axios-retry for improved error handling and retry logic in PDF downloads ([9682561](https://github.com/aguinaldotupy/merger-pdf/commit/9682561c1c688c48198d543f1ba61aed67e0e2bf))
+
 # [4.4.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.3.0...v4.4.0) (2025-10-30)
 
 
