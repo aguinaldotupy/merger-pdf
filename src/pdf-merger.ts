@@ -2,6 +2,7 @@ import fs from "node:fs";
 import http from "node:http";
 import https from "node:https";
 import axios from "axios";
+import axiosRetry from "axios-retry";
 import { PDFDocument } from "pdf-lib";
 import { env } from "./env";
 
@@ -21,6 +22,24 @@ const httpsAgent = new https.Agent({
 	checkServerIdentity: env.NODE_TLS_REJECT_UNAUTHORIZED
 		? undefined
 		: () => undefined,
+});
+
+// Configure axios retry: 3 attempts with 5 second delay
+axiosRetry(axios, {
+	retries: 3,
+	retryDelay: () => 5000, // 5 seconds fixed delay
+	retryCondition: (error) => {
+		// Retry on network errors or 5xx server errors
+		return (
+			axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+			(error.response?.status !== undefined && error.response.status >= 500)
+		);
+	},
+	onRetry: (retryCount, error, requestConfig) => {
+		console.log(
+			`Retry attempt ${retryCount} for ${requestConfig.url}: ${error.message}`,
+		);
+	},
 });
 
 export interface PDFMetadata {
@@ -52,12 +71,15 @@ export class PDFMerger {
 		if (metadata.title) {
 			this.mergedPdf.setTitle(metadata.title);
 		}
+
 		if (metadata.author) {
 			this.mergedPdf.setAuthor(metadata.author);
 		}
+
 		if (metadata.subject) {
 			this.mergedPdf.setSubject(metadata.subject);
 		}
+
 		if (
 			metadata.keywords &&
 			Array.isArray(metadata.keywords) &&
@@ -89,10 +111,40 @@ export class PDFMerger {
 				validateStatus: (status) => status < 400,
 				proxy: false,
 			});
+
 			await this.addPdfFromBuffer(data);
 		} catch (error) {
-			console.error(`Error downloading PDF from ${url}:`, error);
-			throw new Error(`Failed to download PDF from ${url}`);
+			// Detailed error messages for better diagnostics
+			let errorMessage = "Failed to download PDF";
+
+			if (axios.isAxiosError(error)) {
+				if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
+					errorMessage = `Timeout after ${this.getTimeout()}ms. The server is not responding.`;
+				} else if (error.code === "ENOTFOUND") {
+					errorMessage =
+						"DNS resolution failed. Unable to resolve the hostname. Check if the URL is correct.";
+				} else if (error.code === "ECONNREFUSED") {
+					errorMessage =
+						"Connection refused. The server is not accepting connections on this port.";
+				} else if (
+					error.code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE" ||
+					error.code === "CERT_HAS_EXPIRED" ||
+					error.code === "DEPTH_ZERO_SELF_SIGNED_CERT"
+				) {
+					errorMessage = `SSL/TLS certificate error (${error.code}). Set NODE_TLS_REJECT_UNAUTHORIZED=0 to bypass (not recommended for production).`;
+				} else if (error.response) {
+					errorMessage = `HTTP ${error.response.status} ${error.response.statusText}`;
+				} else if (error.code) {
+					errorMessage = `Network error: ${error.code}`;
+				} else {
+					errorMessage = error.message;
+				}
+			} else if (error instanceof Error) {
+				errorMessage = error.message;
+			}
+
+			console.error(`Error downloading PDF from ${url}:`, errorMessage);
+			throw new Error(errorMessage);
 		}
 	}
 
