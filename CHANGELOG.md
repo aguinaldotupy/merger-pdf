@@ -1,3 +1,10 @@
+## [4.5.1](https://github.com/aguinaldotupy/merger-pdf/compare/v4.5.0...v4.5.1) (2025-12-15)
+
+
+### Bug Fixes
+
+* improve PDF error handling and add ignoreEncryption option ([cd94c11](https://github.com/aguinaldotupy/merger-pdf/commit/cd94c11ae67e57fe9403a17e7b8bdf2b656e8f12))
+
 # [4.5.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.4.0...v4.5.0) (2025-11-10)
 
 
