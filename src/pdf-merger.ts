@@ -152,14 +152,22 @@ export class PDFMerger {
 	 * Adds PDF from buffer
 	 */
 	async addPdfFromBuffer(buffer: ArrayBuffer | Uint8Array): Promise<void> {
-		const pdfDoc = await PDFDocument.load(buffer);
-		const pages = await this.mergedPdf.copyPages(
-			pdfDoc,
-			pdfDoc.getPageIndices(),
-		);
+		try {
+			const pdfDoc = await PDFDocument.load(buffer, {
+				ignoreEncryption: true,
+			});
+			const pages = await this.mergedPdf.copyPages(
+				pdfDoc,
+				pdfDoc.getPageIndices(),
+			);
 
-		for (const page of pages) {
-			this.mergedPdf.addPage(page);
+			for (const page of pages) {
+				this.mergedPdf.addPage(page);
+			}
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : "Unknown error";
+			console.error("Error loading PDF from buffer:", errorMessage);
+			throw new Error(`Failed to load PDF: ${errorMessage}`);
 		}
 	}
 

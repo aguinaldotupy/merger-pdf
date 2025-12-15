@@ -106,10 +106,25 @@ app.post("/", async (req: Request, res: Response) => {
 			.filter((result) => result.success)
 			.sort((a, b) => a.index - b.index);
 
+		const pdfErrors: string[] = [];
 		for (const result of successfulDownloads) {
 			if (result.success && result.buffer) {
-				await merger.addPdfFromBuffer(result.buffer);
+				try {
+					await merger.addPdfFromBuffer(result.buffer);
+				} catch (error) {
+					const errorMessage = error instanceof Error ? error.message : "Unknown error";
+					console.error(`Error processing PDF from ${result.url}:`, errorMessage);
+					pdfErrors.push(`${result.url}: ${errorMessage}`);
+				}
 			}
+		}
+
+		// If all PDFs failed, return error
+		if (pdfErrors.length === successfulDownloads.length && pdfErrors.length > 0) {
+			return res.status(500).send({
+				message: "All PDFs failed to process",
+				errors: pdfErrors,
+			});
 		}
 
 		// Save the merged PDF to a file
