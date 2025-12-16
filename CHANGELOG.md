@@ -1,3 +1,5 @@
+## [4.7.1](https://github.com/aguinaldotupy/merger-pdf/compare/v4.7.0...v4.7.1) (2025-12-16)
+
 # [4.7.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.6.0...v4.7.0) (2025-12-16)
 
 
