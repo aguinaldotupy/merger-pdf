@@ -1,3 +1,10 @@
+# [4.7.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.6.0...v4.7.0) (2025-12-16)
+
+
+### Features
+
+* **prisma:** add migration for pdf_processing_events table ([0d1c6b6](https://github.com/aguinaldotupy/merger-pdf/commit/0d1c6b62588d0cda6a1eb6f4eb43730d77276d0b))
+
 # [4.6.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.5.1...v4.6.0) (2025-12-16)
 
 
