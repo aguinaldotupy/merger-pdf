@@ -34,7 +34,13 @@ module.exports = {
 		[
 			"@semantic-release/github",
 			{
-				assets: [{ path: "dist/**/*", label: "Distribution files" }],
+				assets: [
+					{ path: "dist/index.js", label: "Main server entry point" },
+					{ path: "dist/pdf-merger.js", label: "PDF Merger library" },
+					{ path: "dist/merge-cli.js", label: "CLI tool" },
+					{ path: "dist/env.js", label: "Environment config" },
+					{ path: "dist/utils.js", label: "Utilities" },
+				],
 			},
 		],
 		[
