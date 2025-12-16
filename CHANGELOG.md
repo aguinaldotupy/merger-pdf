@@ -1,3 +1,10 @@
+# [4.6.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.5.1...v4.6.0) (2025-12-16)
+
+
+### Features
+
+* add PDF processing analytics and dashboard tab ([52f7b5c](https://github.com/aguinaldotupy/merger-pdf/commit/52f7b5c83a0a9be0376b7a2d42bb2ce6793ef575))
+
 ## [4.5.1](https://github.com/aguinaldotupy/merger-pdf/compare/v4.5.0...v4.5.1) (2025-12-15)
 
 
