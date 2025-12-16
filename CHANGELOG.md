@@ -1,3 +1,10 @@
+# [4.8.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.7.1...v4.8.0) (2025-12-16)
+
+
+### Features
+
+* add batch processing API with app token management ([1725e44](https://github.com/aguinaldotupy/merger-pdf/commit/1725e440499d0fb64fb4451f01b790de61ec204e))
+
 ## [4.7.1](https://github.com/aguinaldotupy/merger-pdf/compare/v4.7.0...v4.7.1) (2025-12-16)
 
 # [4.7.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.6.0...v4.7.0) (2025-12-16)
