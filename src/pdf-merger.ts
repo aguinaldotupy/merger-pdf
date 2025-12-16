@@ -150,11 +150,13 @@ export class PDFMerger {
 
 	/**
 	 * Adds PDF from buffer
+	 * Uses ignoreEncryption to handle encrypted PDFs without password
 	 */
 	async addPdfFromBuffer(buffer: ArrayBuffer | Uint8Array): Promise<void> {
 		try {
 			const pdfDoc = await PDFDocument.load(buffer, {
 				ignoreEncryption: true,
+				updateMetadata: false,
 			});
 			const pages = await this.mergedPdf.copyPages(
 				pdfDoc,
@@ -165,7 +167,8 @@ export class PDFMerger {
 				this.mergedPdf.addPage(page);
 			}
 		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : "Unknown error";
+			const errorMessage =
+				error instanceof Error ? error.message : "Unknown error";
 			console.error("Error loading PDF from buffer:", errorMessage);
 			throw new Error(`Failed to load PDF: ${errorMessage}`);
 		}

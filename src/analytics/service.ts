@@ -10,6 +10,16 @@ export interface DownloadEventData {
 	errorMessage?: string;
 }
 
+export interface PdfProcessingEventData {
+	url: string;
+	success: boolean;
+	timestamp?: Date;
+	userAgent?: string;
+	processingTime?: number;
+	errorMessage?: string;
+	errorType?: string;
+}
+
 export interface StatusCodeOverview {
 	total: number;
 	success: number;
@@ -96,6 +106,24 @@ export interface ChartData {
 	};
 }
 
+export interface PdfProcessingError {
+	id: string;
+	url: string;
+	timestamp: Date;
+	userAgent: string | null;
+	processingTime: number | null;
+	errorMessage: string | null;
+	errorType: string | null;
+}
+
+export interface PdfProcessingOverview {
+	total: number;
+	success: number;
+	failed: number;
+	successRate: number;
+	avgProcessingTime: number | null;
+}
+
 export class AnalyticsService {
 	private prisma: PrismaClient;
 
@@ -121,6 +149,28 @@ export class AnalyticsService {
 		} catch (error) {
 			// Never throw - analytics failures should not impact PDF operations
 			console.error("Failed to record download event:", error);
+		}
+	}
+
+	/**
+	 * Record a PDF processing event (fire-and-forget pattern)
+	 */
+	async recordPdfProcessingEvent(data: PdfProcessingEventData): Promise<void> {
+		try {
+			await this.prisma.pdfProcessingEvent.create({
+				data: {
+					url: data.url,
+					success: data.success,
+					timestamp: data.timestamp || new Date(),
+					userAgent: data.userAgent,
+					processingTime: data.processingTime,
+					errorMessage: data.errorMessage,
+					errorType: data.errorType,
+				},
+			});
+		} catch (error) {
+			// Never throw - analytics failures should not impact PDF operations
+			console.error("Failed to record PDF processing event:", error);
 		}
 	}
 
@@ -524,6 +574,52 @@ export class AnalyticsService {
 			"Dez",
 		];
 		return `${monthNames[Number.parseInt(month, 10) - 1]}/${year}`;
+	}
+
+	/**
+	 * Get PDF processing overview statistics
+	 */
+	async getPdfProcessingOverview(): Promise<PdfProcessingOverview> {
+		const [total, success, avgTime] = await Promise.all([
+			this.prisma.pdfProcessingEvent.count(),
+			this.prisma.pdfProcessingEvent.count({ where: { success: true } }),
+			this.prisma.pdfProcessingEvent.aggregate({
+				_avg: { processingTime: true },
+				where: { success: true },
+			}),
+		]);
+
+		const failed = total - success;
+
+		return {
+			total,
+			success,
+			failed,
+			successRate: total > 0 ? (success / total) * 100 : 0,
+			avgProcessingTime: avgTime._avg.processingTime,
+		};
+	}
+
+	/**
+	 * Get PDF processing errors
+	 */
+	async getPdfProcessingErrors(limit = 50): Promise<PdfProcessingError[]> {
+		const errors = await this.prisma.pdfProcessingEvent.findMany({
+			where: { success: false },
+			orderBy: { timestamp: "desc" },
+			take: Math.min(limit, 1000),
+			select: {
+				id: true,
+				url: true,
+				timestamp: true,
+				userAgent: true,
+				processingTime: true,
+				errorMessage: true,
+				errorType: true,
+			},
+		});
+
+		return errors;
 	}
 
 	/**

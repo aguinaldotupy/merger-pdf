@@ -258,4 +258,62 @@ router.get("/downloads", async (req: Request, res: Response) => {
 	}
 });
 
+/**
+ * Get PDF processing overview statistics
+ */
+router.get("/processing/overview", async (req: Request, res: Response) => {
+	try {
+		const overview = await analyticsService.getPdfProcessingOverview();
+
+		res.json({
+			success: true,
+			data: overview,
+			meta: {
+				timestamp: new Date().toISOString(),
+			},
+		});
+	} catch (error) {
+		console.error("Processing overview query error:", error);
+		res.status(500).json({
+			success: false,
+			error: "Failed to fetch processing overview",
+			meta: {
+				timestamp: new Date().toISOString(),
+			},
+		});
+	}
+});
+
+/**
+ * Get PDF processing errors
+ */
+router.get("/processing/errors", async (req: Request, res: Response) => {
+	try {
+		const limit = Math.min(
+			Number.parseInt(req.query.limit as string, 10) || 50,
+			1000,
+		);
+
+		const errors = await analyticsService.getPdfProcessingErrors(limit);
+
+		res.json({
+			success: true,
+			data: errors,
+			meta: {
+				timestamp: new Date().toISOString(),
+				count: errors.length,
+			},
+		});
+	} catch (error) {
+		console.error("Processing errors query error:", error);
+		res.status(500).json({
+			success: false,
+			error: "Failed to fetch processing errors",
+			meta: {
+				timestamp: new Date().toISOString(),
+			},
+		});
+	}
+});
+
 export default router;

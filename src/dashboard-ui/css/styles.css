@@ -233,6 +233,16 @@ body {
 	background: hsl(var(--card));
 }
 
+.stat-card.card-error {
+	border-left: 4px solid #ef4444;
+	background: hsl(var(--card));
+}
+
+.stat-card.card-secondary {
+	border-left: 4px solid hsl(var(--muted-foreground));
+	background: hsl(var(--card));
+}
+
 .stat-label {
 	font-size: 0.875rem;
 	color: hsl(var(--muted-foreground));

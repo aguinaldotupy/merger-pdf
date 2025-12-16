@@ -82,4 +82,14 @@ const API = {
 		const response = await this.request("/health");
 		return response.data;
 	},
+
+	async getProcessingOverview() {
+		const response = await this.request("/processing/overview");
+		return response.data;
+	},
+
+	async getProcessingErrors(limit = 50) {
+		const response = await this.request(`/processing/errors?limit=${limit}`);
+		return response.data;
+	},
 };

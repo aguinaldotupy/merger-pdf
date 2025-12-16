@@ -72,6 +72,11 @@
 							Downloads
 						</button>
 					</li>
+					<li>
+						<button class="tab-trigger" data-tab="processing">
+							Processamento de PDFs
+						</button>
+					</li>
 				</ul>
 			</div>
 		</nav>
@@ -399,6 +404,71 @@
 					<div id="downloads-empty" class="empty-state hidden">
 						<div class="empty-state-icon">📥</div>
 						<p class="empty-state-text">Nenhum download encontrado.</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Processing Tab -->
+			<div id="processing-tab" class="tab-panel">
+				<div class="tab-content">
+					<div class="flex items-center justify-between mb-4">
+						<h2 style="font-size: 1.5rem; font-weight: 600;">Processamento de PDFs</h2>
+						<div class="flex items-center gap-2">
+							<label for="processing-limit" style="font-size: 0.875rem; color: hsl(var(--muted-foreground));">
+								Mostrar:
+							</label>
+							<select id="processing-limit" class="select">
+								<option value="25">25</option>
+								<option value="50" selected>50</option>
+								<option value="100">100</option>
+								<option value="200">200</option>
+							</select>
+							<button id="processing-refresh-btn" class="btn btn-secondary">
+								Atualizar
+							</button>
+						</div>
+					</div>
+
+					<div id="processing-loading" class="loading">
+						<div class="loading-spinner"></div>
+						<span style="margin-left: 0.5rem;">Carregando...</span>
+					</div>
+
+					<div id="processing-error" class="error hidden"></div>
+
+					<div id="processing-content" class="hidden">
+						<!-- Overview Stats -->
+						<div class="stats-grid mb-4" id="processing-stats-grid"></div>
+
+						<!-- Errors Table -->
+						<div class="card">
+							<div class="card-header">
+								<h3 class="card-title">Erros de Processamento</h3>
+								<p class="card-description">PDFs que falharam ao ser processados pelo pdf-lib</p>
+							</div>
+							<div class="card-content">
+								<div class="table-container">
+									<table id="processing-table">
+										<thead>
+											<tr>
+												<th>Timestamp</th>
+												<th>URL</th>
+												<th>Tipo de Erro</th>
+												<th>Mensagem de Erro</th>
+												<th class="text-right">Tempo (ms)</th>
+											</tr>
+										</thead>
+										<tbody id="processing-tbody"></tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div id="processing-empty" class="empty-state hidden">
+						<div class="empty-state-icon">✅</div>
+						<p class="empty-state-text">Nenhum erro de processamento registrado.</p>
+						<p class="empty-state-text" style="margin-top: 0.5rem;">Todos os PDFs foram processados com sucesso!</p>
 					</div>
 				</div>
 			</div>

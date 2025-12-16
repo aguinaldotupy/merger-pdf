@@ -109,18 +109,56 @@ app.post("/", async (req: Request, res: Response) => {
 		const pdfErrors: string[] = [];
 		for (const result of successfulDownloads) {
 			if (result.success && result.buffer) {
+				const processingStartTime = Date.now();
 				try {
 					await merger.addPdfFromBuffer(result.buffer);
+
+					// Record successful PDF processing
+					analyticsService
+						.recordPdfProcessingEvent({
+							url: result.url,
+							success: true,
+							timestamp: new Date(),
+							userAgent: req.get("user-agent"),
+							processingTime: Date.now() - processingStartTime,
+						})
+						.catch((analyticsError) => {
+							console.error("Analytics recording failed:", analyticsError);
+						});
 				} catch (error) {
-					const errorMessage = error instanceof Error ? error.message : "Unknown error";
-					console.error(`Error processing PDF from ${result.url}:`, errorMessage);
+					const errorMessage =
+						error instanceof Error ? error.message : "Unknown error";
+					const errorType =
+						error instanceof Error ? error.constructor.name : "UnknownError";
+					console.error(
+						`Error processing PDF from ${result.url}:`,
+						errorMessage,
+					);
 					pdfErrors.push(`${result.url}: ${errorMessage}`);
+
+					// Record failed PDF processing
+					analyticsService
+						.recordPdfProcessingEvent({
+							url: result.url,
+							success: false,
+							timestamp: new Date(),
+							userAgent: req.get("user-agent"),
+							processingTime: Date.now() - processingStartTime,
+							errorMessage,
+							errorType,
+						})
+						.catch((analyticsError) => {
+							console.error("Analytics recording failed:", analyticsError);
+						});
 				}
 			}
 		}
 
 		// If all PDFs failed, return error
-		if (pdfErrors.length === successfulDownloads.length && pdfErrors.length > 0) {
+		if (
+			pdfErrors.length === successfulDownloads.length &&
+			pdfErrors.length > 0
+		) {
 			return res.status(500).send({
 				message: "All PDFs failed to process",
 				errors: pdfErrors,

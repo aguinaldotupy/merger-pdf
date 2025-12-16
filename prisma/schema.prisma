@@ -26,3 +26,20 @@ model DownloadEvent {
   @@index([timestamp])
   @@map("download_events")
 }
+
+model PdfProcessingEvent {
+  id              String   @id @default(uuid())
+  url             String
+  success         Boolean
+  timestamp       DateTime @default(now())
+  userAgent       String?
+  processingTime  Int?
+  errorMessage    String?
+  errorType       String?
+
+  @@index([success])
+  @@index([url])
+  @@index([success, timestamp])
+  @@index([timestamp])
+  @@map("pdf_processing_events")
+}

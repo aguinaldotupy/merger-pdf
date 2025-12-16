@@ -53,6 +53,11 @@ const App = {
 				this.currentDownloadsPage = 1;
 				this.loadDownloads();
 			});
+		document
+			.getElementById("processing-refresh-btn")
+			.addEventListener("click", () => {
+				this.loadProcessing();
+			});
 
 		// Limit selectors
 		document.getElementById("urls-limit").addEventListener("change", () => {
@@ -64,6 +69,11 @@ const App = {
 		document.getElementById("errors-group").addEventListener("change", () => {
 			this.loadErrors();
 		});
+		document
+			.getElementById("processing-limit")
+			.addEventListener("change", () => {
+				this.loadProcessing();
+			});
 
 		// Chart grouping selector
 		document.getElementById("chart-grouping").addEventListener("change", () => {
@@ -222,6 +232,8 @@ const App = {
 			this.loadErrors();
 		} else if (tabName === "downloads") {
 			this.loadDownloads();
+		} else if (tabName === "processing") {
+			this.loadProcessing();
 		}
 	},
 
@@ -725,6 +737,118 @@ const App = {
 
 		// Update sort indicators
 		this.updateDownloadsSortIndicators();
+	},
+
+	async loadProcessing() {
+		const limit = document.getElementById("processing-limit").value;
+		const loading = document.getElementById("processing-loading");
+		const error = document.getElementById("processing-error");
+		const content = document.getElementById("processing-content");
+		const empty = document.getElementById("processing-empty");
+
+		loading.classList.remove("hidden");
+		error.classList.add("hidden");
+		content.classList.add("hidden");
+		empty.classList.add("hidden");
+
+		try {
+			const [overview, errors] = await Promise.all([
+				API.getProcessingOverview(),
+				API.getProcessingErrors(limit),
+			]);
+
+			// Show empty state only if there are no errors AND no processing events at all
+			if (overview.total === 0) {
+				empty.classList.remove("hidden");
+				loading.classList.add("hidden");
+				return;
+			}
+
+			this.renderProcessing(overview, errors);
+			content.classList.remove("hidden");
+			loading.classList.add("hidden");
+		} catch (err) {
+			error.textContent = `Erro ao carregar dados de processamento: ${err.message}`;
+			error.classList.remove("hidden");
+			loading.classList.add("hidden");
+		}
+	},
+
+	renderProcessing(overview, errors) {
+		// Render stats grid
+		const statsGrid = document.getElementById("processing-stats-grid");
+		const avgTime = overview.avgProcessingTime
+			? `${overview.avgProcessingTime.toLocaleString()} ms`
+			: "-";
+
+		statsGrid.innerHTML = `
+			<div class="stat-card card-info">
+				<div class="stat-label">Total Processados</div>
+				<div class="stat-value">${overview.total.toLocaleString()}</div>
+			</div>
+			<div class="stat-card card-success">
+				<div class="stat-label">Sucesso</div>
+				<div class="stat-value">${overview.success.toLocaleString()}</div>
+			</div>
+			<div class="stat-card card-error">
+				<div class="stat-label">Falhas</div>
+				<div class="stat-value">${overview.failed.toLocaleString()}</div>
+			</div>
+			<div class="stat-card card-secondary">
+				<div class="stat-label">Taxa de Sucesso</div>
+				<div class="stat-value">${overview.successRate.toFixed(1)}%</div>
+			</div>
+			<div class="stat-card card-secondary">
+				<div class="stat-label">Tempo Médio</div>
+				<div class="stat-value">${avgTime}</div>
+			</div>
+		`;
+
+		// Render errors table
+		const tbody = document.getElementById("processing-tbody");
+
+		if (errors.length === 0) {
+			tbody.innerHTML = `
+				<tr>
+					<td colspan="5" style="text-align: center; padding: 2rem; color: hsl(var(--muted-foreground));">
+						Nenhum erro de processamento registrado
+					</td>
+				</tr>
+			`;
+			return;
+		}
+
+		tbody.innerHTML = errors
+			.map((item) => {
+				const escapedUrl = this.escapeHtml(item.url);
+				const errorType = item.errorType || "-";
+				const rawErrorMessage = item.errorMessage || "";
+				const escapedErrorMessage = rawErrorMessage
+					? this.escapeHtml(rawErrorMessage)
+					: '<em style="color: hsl(var(--muted-foreground));">Sem mensagem</em>';
+				const processingTime = item.processingTime
+					? item.processingTime.toLocaleString()
+					: "-";
+
+				return `
+				<tr>
+					<td style="font-size: 0.875rem; white-space: nowrap;">
+						${new Date(item.timestamp).toLocaleString("pt-BR")}
+					</td>
+					<td class="truncate" style="max-width: 250px;" title="${escapedUrl}">
+						<span class="font-mono">${escapedUrl}</span>
+					</td>
+					<td>
+						<span class="badge badge-error">${this.escapeHtml(errorType)}</span>
+					</td>
+					<td class="truncate" style="max-width: 350px;" title="${this.escapeHtml(rawErrorMessage || "Sem mensagem")}">
+						${escapedErrorMessage}
+					</td>
+					<td class="text-right">${processingTime}</td>
+				</tr>
+			`;
+			})
+			.join("");
 	},
 };
 
