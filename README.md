@@ -5,6 +5,8 @@ A high-performance TypeScript application that provides both an HTTP API and CLI
 ## Features
 
 - **PDF Merging**: Merge multiple PDF files into a single document
+- **Batch Processing**: Async batch processing with webhook notifications
+- **App Token Management**: Secure API tokens for batch operations
 - **Metadata Support**: Set title, author, subject, and keywords for merged PDFs
 - **Multiple Input Sources**: Support for URLs, local files, and buffers
 - **Analytics Dashboard**: Web-based dashboard for tracking PDF operations
@@ -63,6 +65,12 @@ A high-performance TypeScript application that provides both an HTTP API and CLI
 | `ANALYTICS_API_TOKEN` | Dashboard authentication token (min 32 chars) | `dev-token-change-me-in-production-min32chars` |
 | `NODE_TLS_REJECT_UNAUTHORIZED` | SSL certificate validation (`1` or `0`) | `1` |
 | `SKIP_ENV_VALIDATION` | Skip validation during Docker builds | `false` |
+| `BATCH_STORAGE_PATH` | Directory for batch output files | `./batch-storage` |
+| `BATCH_FILE_TTL` | Time-to-live for batch files (ms) | `86400000` (24h) |
+| `BATCH_MAX_CONCURRENT_DOWNLOADS` | Max concurrent PDF downloads | `10` |
+| `BATCH_CLEANUP_INTERVAL` | Interval for cleanup job (ms) | `3600000` (1h) |
+| `BATCH_WEBHOOK_TIMEOUT` | Webhook request timeout (ms) | `30000` |
+| `BASE_URL` | Base URL for download links | `http://localhost:3000` |
 
 ### Environment Validation
 
@@ -172,6 +180,33 @@ curl -X POST http://localhost:3000/ \
     ]
   }' \
   --output merged.pdf
+```
+
+**Batch Processing Example:**
+
+```bash
+# 1. Create an app in the dashboard and get the token
+
+# 2. Submit a batch job
+curl -X POST http://localhost:3000/batch \
+  -H "Content-Type: application/json" \
+  -H "X-API-Token: YOUR_APP_TOKEN" \
+  -d '{
+    "webhookUrl": "https://your-server.com/webhook",
+    "groups": [
+      {"name": "group1", "sources": ["https://example.com/a.pdf", "https://example.com/b.pdf"]},
+      {"name": "group2", "sources": ["https://example.com/c.pdf", "https://example.com/d.pdf"]}
+    ]
+  }'
+
+# 3. Check status
+curl http://localhost:3000/batch/BATCH_ID \
+  -H "X-API-Token: YOUR_APP_TOKEN"
+
+# 4. Download when ready
+curl http://localhost:3000/batch/BATCH_ID/download/group1 \
+  -H "X-API-Token: YOUR_APP_TOKEN" \
+  --output group1.pdf
 ```
 
 #### GET /health
@@ -291,6 +326,330 @@ Get PDF processing errors.
 |-----------|------|---------|-------------|
 | `limit` | number | 50 | Maximum errors to return |
 
+### Batch Processing API
+
+The batch processing API allows you to submit multiple PDF merge jobs asynchronously with webhook notifications.
+
+**Authentication:** All batch endpoints require an App Token via `X-API-Token: <app-token>` header.
+
+#### POST /batch
+
+Submit a new batch job with grouped PDFs.
+
+**Request Body:**
+
+```json
+{
+  "webhookUrl": "https://example.com/webhook",
+  "groups": [
+    {
+      "name": "contract-2024",
+      "sources": [
+        "https://example.com/page1.pdf",
+        "https://example.com/page2.pdf"
+      ]
+    },
+    {
+      "name": "invoice-jan",
+      "sources": [
+        "https://example.com/invoice1.pdf",
+        "https://example.com/invoice2.pdf",
+        "https://example.com/invoice3.pdf"
+      ]
+    }
+  ],
+  "metadata": {
+    "author": "System",
+    "subject": "Batch Processing"
+  }
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `webhookUrl` | string | Yes | URL to receive completion notification |
+| `groups` | array | Yes | Array of PDF groups (1-50 groups) |
+| `groups[].name` | string | Yes | Unique name for the group (used in download URL) |
+| `groups[].sources` | string[] | Yes | URLs of PDFs to merge (1-100 per group) |
+| `metadata` | object | No | Optional metadata for all merged PDFs |
+| `metadata.author` | string | No | Author metadata |
+| `metadata.subject` | string | No | Subject metadata |
+
+**Response (202 Accepted):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "batchId": "550e8400-e29b-41d4-a716-446655440000",
+    "status": "queued",
+    "groupCount": 2,
+    "createdAt": "2024-01-15T10:30:00Z"
+  },
+  "meta": {
+    "timestamp": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+#### GET /batch/:id
+
+Get batch job status with group details.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "status": "processing",
+    "progress": {
+      "total": 2,
+      "completed": 1,
+      "failed": 0
+    },
+    "groups": [
+      {
+        "name": "contract-2024",
+        "status": "completed",
+        "downloadUrl": "/batch/550e8400.../download/contract-2024"
+      },
+      {
+        "name": "invoice-jan",
+        "status": "processing"
+      }
+    ],
+    "createdAt": "2024-01-15T10:30:00Z",
+    "startedAt": "2024-01-15T10:30:05Z",
+    "expiresAt": "2024-01-16T10:30:00Z"
+  }
+}
+```
+
+**Batch Status Values:**
+- `queued` - Waiting to be processed
+- `processing` - Currently being processed
+- `completed` - All groups completed successfully
+- `partial` - Some groups failed
+- `failed` - All groups failed
+- `expired` - Files have been cleaned up
+
+#### GET /batch/:id/download/:groupName
+
+Download the merged PDF for a specific group.
+
+**Response:**
+- Success: Binary PDF file download
+- 404: File not found or not yet processed
+- 410: Batch has expired (files cleaned up)
+
+#### Webhook Notification
+
+When a batch completes (or partially fails), a POST request is sent to the `webhookUrl`:
+
+```json
+{
+  "batchId": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "completed",
+  "results": [
+    {
+      "name": "contract-2024",
+      "downloadUrl": "http://localhost:3000/batch/550e8400.../download/contract-2024",
+      "expiresAt": "2024-01-16T10:30:00Z"
+    },
+    {
+      "name": "invoice-jan",
+      "downloadUrl": "http://localhost:3000/batch/550e8400.../download/invoice-jan",
+      "expiresAt": "2024-01-16T10:30:00Z"
+    }
+  ],
+  "summary": {
+    "total": 2,
+    "success": 2,
+    "failed": 0
+  },
+  "completedAt": "2024-01-15T10:35:00Z"
+}
+```
+
+**Failed Group Example:**
+
+```json
+{
+  "name": "invoice-jan",
+  "error": "All PDF downloads failed"
+}
+```
+
+### App Token Management API
+
+Manage API tokens for batch processing access. All endpoints require dashboard authentication via `X-API-Token` header.
+
+#### GET /api/apps
+
+List all registered apps with usage statistics.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "app-uuid",
+      "name": "my-system",
+      "token": "abc12345...",
+      "tokenPreview": "abc12345",
+      "isActive": true,
+      "createdAt": "2024-01-15T10:00:00Z",
+      "updatedAt": "2024-01-15T10:00:00Z",
+      "stats": {
+        "totalJobs": 25,
+        "completedJobs": 22,
+        "failedJobs": 1,
+        "partialJobs": 2,
+        "successRate": 88.0,
+        "lastActivity": "2024-01-15T12:00:00Z"
+      }
+    }
+  ],
+  "meta": {
+    "timestamp": "2024-01-15T12:00:00Z",
+    "count": 1
+  }
+}
+```
+
+#### GET /api/apps/:id
+
+Get detailed app information with comprehensive statistics.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "app-uuid",
+    "name": "my-system",
+    "token": "full-64-char-token-here...",
+    "isActive": true,
+    "createdAt": "2024-01-15T10:00:00Z",
+    "updatedAt": "2024-01-15T10:00:00Z",
+    "stats": {
+      "batch": {
+        "totalJobs": 25,
+        "completedJobs": 22,
+        "failedJobs": 1,
+        "partialJobs": 2,
+        "successRate": 88.0,
+        "lastActivity": "2024-01-15T12:00:00Z"
+      },
+      "downloads": {
+        "total": 150,
+        "success": 145,
+        "failed": 5,
+        "successRate": 96.67,
+        "avgResponseTime": 1250,
+        "lastDownload": "2024-01-15T12:00:00Z"
+      },
+      "processing": {
+        "total": 145,
+        "success": 143,
+        "failed": 2,
+        "successRate": 98.62,
+        "avgProcessingTime": 850,
+        "lastProcessing": "2024-01-15T12:00:00Z"
+      }
+    }
+  },
+  "meta": {
+    "timestamp": "2024-01-15T12:00:00Z"
+  }
+}
+```
+
+#### POST /api/apps
+
+Create a new app with a generated token.
+
+**Request Body:**
+
+```json
+{
+  "name": "my-new-app"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Unique app name (3-50 chars, alphanumeric with `-` and `_`) |
+
+**Response (201 Created):**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "app-uuid",
+    "name": "my-new-app",
+    "token": "generated-64-char-secure-token...",
+    "isActive": true,
+    "createdAt": "2024-01-15T10:00:00Z"
+  }
+}
+```
+
+**Important:** Save the token immediately. It cannot be retrieved again.
+
+#### PATCH /api/apps/:id/toggle
+
+Toggle app active status (enable/disable).
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "app-uuid",
+    "name": "my-app",
+    "isActive": false
+  }
+}
+```
+
+#### POST /api/apps/:id/regenerate-token
+
+Generate a new token (invalidates the old one immediately).
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "app-uuid",
+    "name": "my-app",
+    "token": "new-64-char-secure-token..."
+  }
+}
+```
+
+#### DELETE /api/apps/:id
+
+Delete an app and all associated batch jobs.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "App deleted successfully"
+}
+```
+
 ## Analytics Dashboard
 
 Access the web-based dashboard at `http://localhost:3000/dashboard`
@@ -303,7 +662,9 @@ Access the web-based dashboard at `http://localhost:3000/dashboard`
 - **Overview**: Download statistics by status code
 - **Top URLs**: Most accessed PDF URLs with success rates
 - **Error Tracking**: Failed downloads and error messages
+- **Downloads**: Paginated download history with filtering
 - **Processing**: PDF processing metrics and errors
+- **Apps**: Manage API tokens for batch processing (cards layout with detailed statistics per app)
 
 ## Database Configuration
 
@@ -435,8 +796,10 @@ docker build -f docker/Dockerfile --build-arg DB_PROVIDER=mysql -t merger-pdf:my
 docker run -d \
   -p 3000:3000 \
   -v $(pwd)/database:/app/database \
+  -v $(pwd)/batch-storage:/app/batch-storage \
   -e DATABASE_URL="file:../database/analytics.db" \
   -e ANALYTICS_API_TOKEN="your-secure-token-here-min-32-chars" \
+  -e BASE_URL="https://your-domain.com" \
   --name merger-pdf-api \
   merger-pdf
 ```
@@ -478,9 +841,11 @@ services:
       - "3000:3000"
     volumes:
       - ./database:/app/database
+      - ./batch-storage:/app/batch-storage
     environment:
       - DATABASE_URL=file:../database/analytics.db
       - ANALYTICS_API_TOKEN=your-secure-token-here-min-32-chars
+      - BASE_URL=https://your-domain.com
     restart: unless-stopped
 ```
 
@@ -528,9 +893,10 @@ docker run -v $(pwd):/data merger-pdf merge-pdf /data/input /data/output.pdf
 ### Important Notes
 
 1. **Automatic Schema Sync**: Database schema is applied automatically on container startup using `prisma db push`
-2. **Volume Mapping**: Mount `/app/database` for SQLite persistence
+2. **Volume Mapping**: Mount `/app/database` for SQLite persistence and `/app/batch-storage` for batch files
 3. **Environment Variables**: Pass at runtime, not during build (security)
-4. **Quick Restart**:
+4. **BASE_URL**: Set this to your public URL for correct download links in webhooks
+5. **Quick Restart**:
 
    ```bash
    docker stop merger-pdf && docker rm merger-pdf && \

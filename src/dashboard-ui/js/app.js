@@ -8,6 +8,8 @@ const App = {
 	init() {
 		// Initialize Auth module to restore token from sessionStorage
 		Auth.init();
+		// Initialize Apps module
+		AppsManager.init();
 		this.setupEventListeners();
 		this.checkAuth();
 	},
@@ -234,6 +236,8 @@ const App = {
 			this.loadDownloads();
 		} else if (tabName === "processing") {
 			this.loadProcessing();
+		} else if (tabName === "apps") {
+			AppsManager.loadApps();
 		}
 	},
 

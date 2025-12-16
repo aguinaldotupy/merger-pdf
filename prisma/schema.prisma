@@ -19,11 +19,13 @@ model DownloadEvent {
   userAgent     String?
   responseTime  Int?
   errorMessage  String?
+  appId         String?  // Optional: tracks which app made this request
 
   @@index([statusCode])
   @@index([url])
   @@index([statusCode, timestamp])
   @@index([timestamp])
+  @@index([appId])
   @@map("download_events")
 }
 
@@ -36,10 +38,72 @@ model PdfProcessingEvent {
   processingTime  Int?
   errorMessage    String?
   errorType       String?
+  appId           String?  // Optional: tracks which app made this request
 
   @@index([success])
   @@index([url])
   @@index([success, timestamp])
   @@index([timestamp])
+  @@index([appId])
   @@map("pdf_processing_events")
+}
+
+// App Token Management for Batch Processing
+model App {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  token     String     @unique
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  batchJobs BatchJob[]
+
+  @@index([token])
+  @@index([isActive])
+  @@map("apps")
+}
+
+model BatchJob {
+  id           String       @id @default(uuid())
+  appId        String
+  webhookUrl   String
+  status       String       @default("queued") // queued, processing, completed, partial, failed
+  metadata     String?      // JSON string for author, subject, etc.
+  totalGroups  Int
+  completed    Int          @default(0)
+  failed       Int          @default(0)
+  createdAt    DateTime     @default(now())
+  startedAt    DateTime?
+  completedAt  DateTime?
+  expiresAt    DateTime?
+  errorMessage String?
+
+  app    App          @relation(fields: [appId], references: [id])
+  groups BatchGroup[]
+
+  @@index([appId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@map("batch_jobs")
+}
+
+model BatchGroup {
+  id           String    @id @default(uuid())
+  batchJobId   String
+  name         String
+  sources      String    // JSON array of URLs
+  status       String    @default("pending") // pending, processing, completed, failed
+  filePath     String?
+  fileSize     Int?
+  errorMessage String?
+  createdAt    DateTime  @default(now())
+  completedAt  DateTime?
+
+  batchJob BatchJob @relation(fields: [batchJobId], references: [id], onDelete: Cascade)
+
+  @@index([batchJobId])
+  @@index([status])
+  @@map("batch_groups")
 }

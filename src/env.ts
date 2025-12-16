@@ -32,6 +32,13 @@ const envSchema = z.object({
 		.min(32, "ANALYTICS_API_TOKEN must be at least 32 characters")
 		.default("dev-token-change-me-in-production-min32chars"),
 
+	// Batch Processing Configuration
+	BATCH_STORAGE_PATH: z.string().default("./batch-storage"),
+	BATCH_FILE_TTL: z.coerce.number().positive().default(86400000), // 24 hours in ms
+	BATCH_MAX_CONCURRENT_DOWNLOADS: z.coerce.number().positive().default(10),
+	BATCH_CLEANUP_INTERVAL: z.coerce.number().positive().default(3600000), // 1 hour in ms
+	BATCH_WEBHOOK_TIMEOUT: z.coerce.number().positive().default(30000), // 30 seconds
+
 	// Skip validation flag (used during Docker builds)
 	SKIP_ENV_VALIDATION: z
 		.string()

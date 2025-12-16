@@ -8,6 +8,7 @@ export interface DownloadEventData {
 	userAgent?: string;
 	responseTime?: number;
 	errorMessage?: string;
+	appId?: string; // Optional: tracks which app made this request
 }
 
 export interface PdfProcessingEventData {
@@ -18,6 +19,7 @@ export interface PdfProcessingEventData {
 	processingTime?: number;
 	errorMessage?: string;
 	errorType?: string;
+	appId?: string; // Optional: tracks which app made this request
 }
 
 export interface StatusCodeOverview {
@@ -144,6 +146,7 @@ export class AnalyticsService {
 					userAgent: data.userAgent,
 					responseTime: data.responseTime,
 					errorMessage: data.errorMessage,
+					appId: data.appId,
 				},
 			});
 		} catch (error) {
@@ -166,6 +169,7 @@ export class AnalyticsService {
 					processingTime: data.processingTime,
 					errorMessage: data.errorMessage,
 					errorType: data.errorType,
+					appId: data.appId,
 				},
 			});
 		} catch (error) {
@@ -620,6 +624,113 @@ export class AnalyticsService {
 		});
 
 		return errors;
+	}
+
+	/**
+	 * Get download statistics for a specific app
+	 */
+	async getDownloadStatsByAppId(appId: string): Promise<{
+		total: number;
+		success: number;
+		failed: number;
+		successRate: number;
+		avgResponseTime: number | null;
+		lastDownload: Date | null;
+	}> {
+		const [total, success, avgTime, lastEvent] = await Promise.all([
+			this.prisma.downloadEvent.count({ where: { appId } }),
+			this.prisma.downloadEvent.count({
+				where: { appId, statusCode: { gte: 200, lt: 400 } },
+			}),
+			this.prisma.downloadEvent.aggregate({
+				_avg: { responseTime: true },
+				where: { appId, statusCode: { gte: 200, lt: 400 } },
+			}),
+			this.prisma.downloadEvent.findFirst({
+				where: { appId },
+				orderBy: { timestamp: "desc" },
+				select: { timestamp: true },
+			}),
+		]);
+
+		const failed = total - success;
+
+		return {
+			total,
+			success,
+			failed,
+			successRate: total > 0 ? (success / total) * 100 : 0,
+			avgResponseTime: avgTime._avg.responseTime,
+			lastDownload: lastEvent?.timestamp || null,
+		};
+	}
+
+	/**
+	 * Get PDF processing statistics for a specific app
+	 */
+	async getPdfProcessingStatsByAppId(appId: string): Promise<{
+		total: number;
+		success: number;
+		failed: number;
+		successRate: number;
+		avgProcessingTime: number | null;
+		lastProcessing: Date | null;
+	}> {
+		const [total, success, avgTime, lastEvent] = await Promise.all([
+			this.prisma.pdfProcessingEvent.count({ where: { appId } }),
+			this.prisma.pdfProcessingEvent.count({
+				where: { appId, success: true },
+			}),
+			this.prisma.pdfProcessingEvent.aggregate({
+				_avg: { processingTime: true },
+				where: { appId, success: true },
+			}),
+			this.prisma.pdfProcessingEvent.findFirst({
+				where: { appId },
+				orderBy: { timestamp: "desc" },
+				select: { timestamp: true },
+			}),
+		]);
+
+		const failed = total - success;
+
+		return {
+			total,
+			success,
+			failed,
+			successRate: total > 0 ? (success / total) * 100 : 0,
+			avgProcessingTime: avgTime._avg.processingTime,
+			lastProcessing: lastEvent?.timestamp || null,
+		};
+	}
+
+	/**
+	 * Get combined statistics for a specific app (downloads + processing)
+	 */
+	async getAppStatistics(appId: string): Promise<{
+		downloads: {
+			total: number;
+			success: number;
+			failed: number;
+			successRate: number;
+			avgResponseTime: number | null;
+			lastDownload: Date | null;
+		};
+		processing: {
+			total: number;
+			success: number;
+			failed: number;
+			successRate: number;
+			avgProcessingTime: number | null;
+			lastProcessing: Date | null;
+		};
+	}> {
+		const [downloads, processing] = await Promise.all([
+			this.getDownloadStatsByAppId(appId),
+			this.getPdfProcessingStatsByAppId(appId),
+		]);
+
+		return { downloads, processing };
 	}
 
 	/**

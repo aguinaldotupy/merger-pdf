@@ -77,6 +77,11 @@
 							Processamento de PDFs
 						</button>
 					</li>
+					<li>
+						<button class="tab-trigger" data-tab="apps">
+							Apps (API Tokens)
+						</button>
+					</li>
 				</ul>
 			</div>
 		</nav>
@@ -472,12 +477,284 @@
 					</div>
 				</div>
 			</div>
+
+			<!-- Apps Tab -->
+			<div id="apps-tab" class="tab-panel">
+				<div class="tab-content">
+					<div class="flex items-center justify-between mb-4">
+						<h2 style="font-size: 1.5rem; font-weight: 600;">Gerenciamento de Apps</h2>
+						<div class="flex items-center gap-2">
+							<button id="apps-refresh-btn" class="btn btn-secondary">
+								Atualizar
+							</button>
+							<button id="apps-create-btn" class="btn btn-primary">
+								Novo App
+							</button>
+						</div>
+					</div>
+
+					<div id="apps-loading" class="loading">
+						<div class="loading-spinner"></div>
+						<span style="margin-left: 0.5rem;">Carregando...</span>
+					</div>
+
+					<div id="apps-error" class="error hidden"></div>
+
+					<div id="apps-content" class="hidden">
+						<div id="apps-cards-grid" class="apps-cards-grid">
+							<!-- Cards will be rendered here by JavaScript -->
+						</div>
+					</div>
+
+					<div id="apps-empty" class="empty-state hidden">
+						<div class="empty-state-icon">🔑</div>
+						<p class="empty-state-text">Nenhum app cadastrado ainda.</p>
+						<p class="empty-state-text" style="margin-top: 0.5rem;">Crie um app para começar a usar o batch processing.</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Create App Modal -->
+			<div id="create-app-modal" class="modal hidden">
+				<div class="modal-backdrop"></div>
+				<div class="modal-content card">
+					<div class="card-header">
+						<h3 class="card-title">Criar Novo App</h3>
+						<p class="card-description">Insira um nome único para o app</p>
+					</div>
+					<div class="card-content">
+						<form id="create-app-form">
+							<div class="form-group">
+								<label for="app-name-input" class="form-label">Nome do App</label>
+								<input
+									type="text"
+									id="app-name-input"
+									class="input"
+									placeholder="Ex: meu-sistema-erp"
+									required
+									minlength="3"
+									maxlength="50"
+									pattern="[a-zA-Z0-9_-]+"
+								>
+								<p style="font-size: 0.75rem; color: hsl(var(--muted-foreground)); margin-top: 0.25rem;">
+									Apenas letras, números, hífens e underscores. 3-50 caracteres.
+								</p>
+							</div>
+							<div id="create-app-error" class="error hidden" style="margin-bottom: 1rem;"></div>
+							<div class="flex items-center justify-end gap-2">
+								<button type="button" id="create-app-cancel" class="btn btn-secondary">
+									Cancelar
+								</button>
+								<button type="submit" class="btn btn-primary">
+									Criar App
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+
+			<!-- Token Display Modal -->
+			<div id="token-modal" class="modal hidden">
+				<div class="modal-backdrop"></div>
+				<div class="modal-content card">
+					<div class="card-header">
+						<h3 class="card-title">Token Gerado</h3>
+						<p class="card-description" style="color: #f59e0b;">
+							Copie o token agora! Ele não será exibido novamente.
+						</p>
+					</div>
+					<div class="card-content">
+						<div style="background: hsl(var(--muted)); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+							<code id="generated-token" style="word-break: break-all; font-size: 0.875rem;"></code>
+						</div>
+						<div class="flex items-center justify-end gap-2">
+							<button id="copy-token-btn" class="btn btn-primary">
+								Copiar Token
+							</button>
+							<button id="close-token-modal" class="btn btn-secondary">
+								Fechar
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Confirm Action Modal -->
+			<div id="confirm-modal" class="modal hidden">
+				<div class="modal-backdrop"></div>
+				<div class="modal-content card">
+					<div class="card-header">
+						<h3 class="card-title" id="confirm-title">Confirmar Ação</h3>
+						<p class="card-description" id="confirm-description"></p>
+					</div>
+					<div class="card-content">
+						<div id="confirm-error" class="error hidden" style="margin-bottom: 1rem;"></div>
+						<div class="flex items-center justify-end gap-2">
+							<button id="confirm-cancel" class="btn btn-secondary">
+								Cancelar
+							</button>
+							<button id="confirm-action" class="btn btn-primary">
+								Confirmar
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- App Details Modal -->
+			<div id="app-details-modal" class="modal hidden">
+				<div class="modal-backdrop"></div>
+				<div class="modal-content card app-details-modal-content">
+					<div class="card-header">
+						<div class="flex items-center justify-between">
+							<div>
+								<h3 class="card-title" id="app-details-name">Nome do App</h3>
+								<p class="card-description">Estatísticas detalhadas do app</p>
+							</div>
+							<span id="app-details-status" class="badge"></span>
+						</div>
+					</div>
+					<div class="card-content">
+						<div id="app-details-loading" class="loading hidden">
+							<div class="loading-spinner"></div>
+							<span style="margin-left: 0.5rem;">Carregando...</span>
+						</div>
+
+						<div id="app-details-content">
+							<!-- Token Section -->
+							<div class="app-details-section">
+								<h4 class="app-details-section-title">Token de API</h4>
+								<div class="app-details-token">
+									<code id="app-details-token-value"></code>
+									<button id="app-details-copy-token" class="btn btn-sm btn-secondary">Copiar</button>
+								</div>
+							</div>
+
+							<!-- Stats Grid -->
+							<div class="app-details-stats-grid">
+								<!-- Batch Jobs Stats -->
+								<div class="app-details-stats-card">
+									<h4 class="app-details-stats-title">Batch Jobs</h4>
+									<div class="app-details-stats-content">
+										<div class="app-details-stat">
+											<span class="app-details-stat-label">Total</span>
+											<span class="app-details-stat-value" id="app-details-batch-total">0</span>
+										</div>
+										<div class="app-details-stat">
+											<span class="app-details-stat-label">Completos</span>
+											<span class="app-details-stat-value text-success" id="app-details-batch-completed">0</span>
+										</div>
+										<div class="app-details-stat">
+											<span class="app-details-stat-label">Falhas</span>
+											<span class="app-details-stat-value text-danger" id="app-details-batch-failed">0</span>
+										</div>
+										<div class="app-details-stat">
+											<span class="app-details-stat-label">Parciais</span>
+											<span class="app-details-stat-value text-warning" id="app-details-batch-partial">0</span>
+										</div>
+									</div>
+								</div>
+
+								<!-- Downloads Stats -->
+								<div class="app-details-stats-card">
+									<h4 class="app-details-stats-title">Downloads de PDFs</h4>
+									<div class="app-details-stats-content">
+										<div class="app-details-stat">
+											<span class="app-details-stat-label">Total</span>
+											<span class="app-details-stat-value" id="app-details-downloads-total">0</span>
+										</div>
+										<div class="app-details-stat">
+											<span class="app-details-stat-label">Sucesso</span>
+											<span class="app-details-stat-value text-success" id="app-details-downloads-success">0</span>
+										</div>
+										<div class="app-details-stat">
+											<span class="app-details-stat-label">Erros</span>
+											<span class="app-details-stat-value text-danger" id="app-details-downloads-failed">0</span>
+										</div>
+										<div class="app-details-stat">
+											<span class="app-details-stat-label">Taxa Sucesso</span>
+											<span class="app-details-stat-value" id="app-details-downloads-rate">0%</span>
+										</div>
+										<div class="app-details-stat">
+											<span class="app-details-stat-label">Tempo Médio</span>
+											<span class="app-details-stat-value" id="app-details-downloads-avg">-</span>
+										</div>
+									</div>
+								</div>
+
+								<!-- Processing Stats -->
+								<div class="app-details-stats-card">
+									<h4 class="app-details-stats-title">Processamento de PDFs</h4>
+									<div class="app-details-stats-content">
+										<div class="app-details-stat">
+											<span class="app-details-stat-label">Total</span>
+											<span class="app-details-stat-value" id="app-details-processing-total">0</span>
+										</div>
+										<div class="app-details-stat">
+											<span class="app-details-stat-label">Sucesso</span>
+											<span class="app-details-stat-value text-success" id="app-details-processing-success">0</span>
+										</div>
+										<div class="app-details-stat">
+											<span class="app-details-stat-label">Erros</span>
+											<span class="app-details-stat-value text-danger" id="app-details-processing-failed">0</span>
+										</div>
+										<div class="app-details-stat">
+											<span class="app-details-stat-label">Taxa Sucesso</span>
+											<span class="app-details-stat-value" id="app-details-processing-rate">0%</span>
+										</div>
+										<div class="app-details-stat">
+											<span class="app-details-stat-label">Tempo Médio</span>
+											<span class="app-details-stat-value" id="app-details-processing-avg">-</span>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Info Section -->
+							<div class="app-details-section">
+								<h4 class="app-details-section-title">Informações</h4>
+								<div class="app-details-info-grid">
+									<div class="app-details-info-item">
+										<span class="app-details-info-label">Criado em</span>
+										<span id="app-details-created-at">-</span>
+									</div>
+									<div class="app-details-info-item">
+										<span class="app-details-info-label">Última atividade</span>
+										<span id="app-details-last-activity">-</span>
+									</div>
+								</div>
+							</div>
+
+							<!-- Actions -->
+							<div class="app-details-actions">
+								<button id="app-details-regenerate" class="btn btn-secondary">
+									Regenerar Token
+								</button>
+								<button id="app-details-toggle" class="btn btn-secondary">
+									Desativar
+								</button>
+								<button id="app-details-delete" class="btn btn-destructive">
+									Excluir
+								</button>
+							</div>
+						</div>
+
+						<div class="flex items-center justify-end mt-4">
+							<button id="close-app-details-modal" class="btn btn-secondary">
+								Fechar
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
 		</main>
 	</div>
 
 	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 	<script src="/dashboard/js/api.js"></script>
 	<script src="/dashboard/js/auth.js"></script>
+	<script src="/dashboard/js/apps.js"></script>
 	<script src="/dashboard/js/app.js"></script>
 </body>
 </html>

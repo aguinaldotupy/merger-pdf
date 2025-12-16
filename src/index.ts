@@ -4,6 +4,12 @@ import axios from "axios";
 import express from "express";
 import type { Application, Request, Response } from "express";
 import { AnalyticsService } from "./analytics/service";
+import appsRoutes from "./apps/routes";
+import { appService } from "./apps/service";
+import { startCleanupJob, stopCleanupJob } from "./batch/cleanup";
+import batchRoutes from "./batch/routes";
+import { startBatchWorker, stopBatchWorker } from "./batch/worker";
+import { authMiddleware } from "./dashboard/auth-middleware";
 import dashboardRoutes from "./dashboard/routes";
 import { env } from "./env";
 import { PDFMerger } from "./pdf-merger";
@@ -18,12 +24,38 @@ const analyticsService = new AnalyticsService();
 // Register analytics dashboard routes
 app.use("/api/analytics", dashboardRoutes);
 
+// Register apps management routes (protected by dashboard auth)
+app.use("/api/apps", authMiddleware, appsRoutes);
+
+// Register batch processing routes (protected by app token auth)
+app.use("/batch", batchRoutes);
+
 interface MergeRequest {
 	title: string;
 	author: string | null;
 	subject: string | null;
 	keywords: string[] | null;
 	sources: string[];
+}
+
+/**
+ * Extract app token from request headers or query string
+ * Supports: Authorization: Bearer <token> or ?appToken=<token>
+ */
+function extractAppToken(req: Request): string | null {
+	// Check Authorization header (Bearer token)
+	const authHeader = req.headers.authorization;
+	if (authHeader?.startsWith("Bearer ")) {
+		return authHeader.slice(7);
+	}
+
+	// Check query string
+	const queryToken = req.query.appToken;
+	if (typeof queryToken === "string" && queryToken.length > 0) {
+		return queryToken;
+	}
+
+	return null;
 }
 
 app.post("/", async (req: Request, res: Response) => {
@@ -35,6 +67,17 @@ app.post("/", async (req: Request, res: Response) => {
 	}
 
 	try {
+		// Extract and validate app token (optional for now - just for tracking)
+		const token = extractAppToken(req);
+		let appId: string | undefined;
+
+		if (token) {
+			const validatedApp = await appService.validateToken(token);
+			if (validatedApp) {
+				appId = validatedApp.id;
+			}
+		}
+
 		// Create a new PDF merger
 		const merger = await PDFMerger.create();
 
@@ -67,6 +110,7 @@ app.post("/", async (req: Request, res: Response) => {
 							timestamp: new Date(),
 							userAgent: req.get("user-agent"),
 							responseTime,
+							appId,
 						})
 						.catch((error) => {
 							console.error("Analytics recording failed:", error);
@@ -90,6 +134,7 @@ app.post("/", async (req: Request, res: Response) => {
 							userAgent: req.get("user-agent"),
 							responseTime,
 							errorMessage,
+							appId,
 						})
 						.catch((analyticsError) => {
 							console.error("Analytics recording failed:", analyticsError);
@@ -121,6 +166,7 @@ app.post("/", async (req: Request, res: Response) => {
 							timestamp: new Date(),
 							userAgent: req.get("user-agent"),
 							processingTime: Date.now() - processingStartTime,
+							appId,
 						})
 						.catch((analyticsError) => {
 							console.error("Analytics recording failed:", analyticsError);
@@ -146,6 +192,7 @@ app.post("/", async (req: Request, res: Response) => {
 							processingTime: Date.now() - processingStartTime,
 							errorMessage,
 							errorType,
+							appId,
 						})
 						.catch((analyticsError) => {
 							console.error("Analytics recording failed:", analyticsError);
@@ -200,6 +247,31 @@ if (fs.existsSync(dashboardPath)) {
 	console.warn("Dashboard UI not found at src/dashboard-ui");
 }
 
-app.listen(env.PORT, () => {
+const server = app.listen(env.PORT, () => {
 	console.log(`Server is running on port ${env.PORT}`);
+
+	// Start batch processing workers
+	startBatchWorker();
+	startCleanupJob();
+});
+
+// Graceful shutdown
+process.on("SIGTERM", () => {
+	console.log("SIGTERM received. Shutting down gracefully...");
+	stopBatchWorker();
+	stopCleanupJob();
+	server.close(() => {
+		console.log("Server closed");
+		process.exit(0);
+	});
+});
+
+process.on("SIGINT", () => {
+	console.log("SIGINT received. Shutting down gracefully...");
+	stopBatchWorker();
+	stopCleanupJob();
+	server.close(() => {
+		console.log("Server closed");
+		process.exit(0);
+	});
 });
