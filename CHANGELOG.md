@@ -1,3 +1,10 @@
+## [4.9.1](https://github.com/aguinaldotupy/merger-pdf/compare/v4.9.0...v4.9.1) (2025-12-16)
+
+
+### Bug Fixes
+
+* update release config to upload only root-level dist files ([482b23d](https://github.com/aguinaldotupy/merger-pdf/commit/482b23d454bd62ae8db2b4b8d4cce51438e13dc9))
+
 # [4.9.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.8.0...v4.9.0) (2025-12-16)
 
 
