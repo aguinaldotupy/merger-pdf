@@ -17,10 +17,10 @@ else
   echo "📁 Using SQLite (local file database)"
 fi
 
-# Run database migrations
-echo "📦 Running database migrations..."
-bun run prisma:deploy
+# Apply database schema (works for all providers without provider-specific migrations)
+echo "📦 Applying database schema..."
+bunx prisma db push --skip-generate
 
 # Start the application
-echo "✅ Migrations complete. Starting server..."
+echo "✅ Schema applied. Starting server..."
 exec bun run serve

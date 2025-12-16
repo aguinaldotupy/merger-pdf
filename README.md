@@ -1,19 +1,24 @@
 # PDF Merger API
 
-This project is a Bun application that provides an API to merge multiple PDF files into a single PDF. It uses Express for handling HTTP requests and pdf-lib for PDF manipulation.
+A high-performance TypeScript application that provides both an HTTP API and CLI tool for merging multiple PDF files. Built with Bun runtime, Express, and pdf-lib.
 
 ## Features
 
-- Merge multiple PDF files into a single PDF.
-- Set metadata such as title, author, subject, and keywords for the merged PDF.
-- Download the merged PDF directly from the API.
-- **Analytics Dashboard**: Track PDF download statistics with a web-based dashboard.
-- **Individual URL Tracking**: Monitor each PDF URL's success rate, access count, and errors.
+- **PDF Merging**: Merge multiple PDF files into a single document
+- **Metadata Support**: Set title, author, subject, and keywords for merged PDFs
+- **Multiple Input Sources**: Support for URLs, local files, and buffers
+- **Analytics Dashboard**: Web-based dashboard for tracking PDF operations
+- **URL Tracking**: Monitor each PDF URL's success rate, access count, and errors
+- **PDF Processing Metrics**: Track processing time, success rates, and error types
+- **Automatic Retry**: 3 retry attempts with 5-second delay for failed downloads
+- **Encrypted PDF Support**: Handle password-protected PDFs with `ignoreEncryption` option
+- **Multi-Database Support**: SQLite (default), PostgreSQL, and MySQL
 
 ## Prerequisites
 
-- [Bun](https://bun.sh) (version 1.0 or higher)
-- SQLite (for analytics storage)
+- [Bun](https://bun.sh) (version 1.1.45 or higher) - Preferred runtime
+- Node.js (version 20 or higher) - Alternative runtime
+- SQLite, PostgreSQL, or MySQL (for analytics storage)
 
 ## Installation
 
@@ -24,7 +29,7 @@ This project is a Bun application that provides an API to merge multiple PDF fil
    cd pdf-merger-api
    ```
 
-2. Install the dependencies:
+2. Install dependencies:
 
    ```bash
    bun install
@@ -36,37 +41,40 @@ This project is a Bun application that provides an API to merge multiple PDF fil
    # Generate Prisma client
    bun run prisma:generate
 
-   # Run migrations
+   # Run migrations (development)
    bun run prisma:migrate
+
+   # Deploy migrations (production)
+   bun run prisma:deploy
    ```
 
-4. Configure environment variables (optional):
-
-   Create a `.env` file based on `.env.example`:
+4. Configure environment variables:
 
    ```bash
    cp .env.example .env
    ```
 
-   Available variables:
-   - `PORT`: Server port (default: 3000)
-   - `REQUEST_TIMEOUT`: Timeout for PDF downloads in milliseconds (default: 10000)
-   - `DATABASE_URL`: Database connection string (required)
-   - `DATABASE_PROVIDER`: Database type - `sqlite`, `postgresql`, or `mysql` (default: sqlite)
-   - `NODE_ENV`: Environment - `development`, `production`, or `test` (default: development)
-   - `ANALYTICS_API_TOKEN`: Token for accessing the analytics dashboard
-     - Default (dev): `dev-token-change-me-in-production-min32chars`
-     - ⚠️ **IMPORTANT**: Minimum 32 characters required. Change this in production!
-     - Generate with: `openssl rand -hex 32`
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PORT` | Server port | `3000` |
+| `REQUEST_TIMEOUT` | PDF download timeout (ms) | `10000` |
+| `DATABASE_URL` | Database connection string | Required |
+| `DATABASE_PROVIDER` | `sqlite`, `postgresql`, or `mysql` | `sqlite` |
+| `NODE_ENV` | `development`, `production`, or `test` | `development` |
+| `ANALYTICS_API_TOKEN` | Dashboard authentication token (min 32 chars) | `dev-token-change-me-in-production-min32chars` |
+| `NODE_TLS_REJECT_UNAUTHORIZED` | SSL certificate validation (`1` or `0`) | `1` |
+| `SKIP_ENV_VALIDATION` | Skip validation during Docker builds | `false` |
 
 ### Environment Validation
 
-This project uses **Zod** for type-safe environment variable validation. All environment variables are validated at startup, ensuring:
+This project uses **Zod** for type-safe environment variable validation:
 
-- ✅ **Type Safety**: TypeScript knows the exact types of all env vars
-- ✅ **Runtime Validation**: Invalid values are caught immediately with clear error messages
-- ✅ **Default Values**: Sensible defaults for development
-- ✅ **Security**: Required minimum lengths for sensitive values like API tokens
+- **Type Safety**: TypeScript knows the exact types of all env vars
+- **Runtime Validation**: Invalid values are caught immediately with clear error messages
+- **Default Values**: Sensible defaults for development
+- **Security**: Required minimum lengths for sensitive values like API tokens
 
 **Example validation error:**
 
@@ -78,113 +86,55 @@ This project uses **Zod** for type-safe environment variable validation. All env
     ANALYTICS_API_TOKEN: [ 'ANALYTICS_API_TOKEN must be at least 32 characters' ]
   }
 }
-Error: Invalid environment variables
 ```
 
-**Skipping validation** (useful for Docker builds):
+**Generate a secure token:**
 
 ```bash
-SKIP_ENV_VALIDATION=true bun run build
+openssl rand -hex 32
 ```
 
 ## Usage
 
-1. Start the server:
+### Starting the Server
 
-   ```bash
-   bun start
-   ```
+```bash
+# Development (with hot reload)
+bun start
 
-2. The server will run on port 3000 by default. You can access the API at `http://localhost:3000`.
+# Production (compiled)
+bun run build && bun run serve
+```
 
-### Database Configuration
+The server runs on port 3000 by default: `http://localhost:3000`
 
-This project supports **SQLite** (default), **PostgreSQL**, and **MySQL**.
+## Available Scripts
 
-#### Using SQLite (Default)
+| Script | Description |
+|--------|-------------|
+| `bun start` | Run development server with ts-node |
+| `bun run build` | Compile TypeScript to JavaScript |
+| `bun run serve` | Run compiled production server |
+| `bun run cli` | Run CLI tool (requires build) |
+| `bun run lint` | Lint code with Biome (--write --unsafe) |
+| `bun run lint:fix` | Fix lint issues (--write only) |
+| `bun run prisma:generate` | Generate Prisma client |
+| `bun run prisma:migrate` | Run migrations (interactive) |
+| `bun run prisma:deploy` | Deploy migrations (production) |
+| `bun run release` | Run semantic-release |
 
-No additional setup required. The database file will be created automatically at `./prisma/analytics.db`.
+## API Endpoints
 
-#### Using PostgreSQL
-
-1. Update your `.env`:
-
-   ```bash
-   DATABASE_PROVIDER=postgresql
-   DATABASE_URL="postgresql://user:password@localhost:5432/analytics?schema=public"
-   ```
-
-2. Create the database and run migrations:
-
-   ```bash
-   createdb analytics
-   rm -rf prisma/migrations
-   bun run prisma:migrate
-   ```
-
-#### Using MySQL
-
-1. Update your `.env`:
-
-   ```bash
-   DATABASE_PROVIDER=mysql
-   DATABASE_URL="mysql://user:password@localhost:3306/analytics"
-   ```
-
-2. Create the database and run migrations:
-
-   ```sql
-   CREATE DATABASE analytics;
-   ```
-
-   ```bash
-   rm -rf prisma/migrations
-   bun run prisma:migrate
-   ```
-
-**Note:** When switching database providers:
-
-1. Update `DATABASE_PROVIDER` and `DATABASE_URL` in `.env`
-2. Delete the `prisma/migrations` directory
-3. Run `bun run prisma:migrate` to create new migrations for the target database
-
-### Analytics Dashboard
-
-Access the analytics dashboard at `http://localhost:3000/dashboard`
-
-**Authentication:**
-
-- **Development**: Use the default token `dev-token-change-me-in-production-min32chars`
-- **Production**: Set a secure token with `ANALYTICS_API_TOKEN` environment variable
-- Login by entering the token in the dashboard login page
-
-**Features:**
-
-- **Overview Tab**: View download statistics by status code
-- **Top URLs Tab**: See most accessed PDF URLs with success rates
-- **Error Tracking Tab**: Monitor failed downloads and error messages
-
-### API Endpoints
+### PDF Merging
 
 #### POST /
 
-Merge multiple PDF files.
+Merge multiple PDF files from URLs.
 
-- **Request Body**: JSON object with the following fields:
-  - `title` (string): Title of the merged PDF.
-  - `author` (string, optional): Author of the merged PDF.
-  - `subject` (string, optional): Subject of the merged PDF.
-  - `keywords` (array of strings, optional): Keywords for the merged PDF.
-  - `sources` (array of strings): URLs of the PDF files to merge.
+**Request Body:**
 
-- **Response**: The merged PDF file.
-
-**Example Request with `curl`:**
-
-```bash
-curl -X POST http://localhost:3000/ \
--H "Content-Type: application/json" \
--d '{
+```json
+{
   "title": "merged-document",
   "author": "John Doe",
   "subject": "Merged PDF",
@@ -193,141 +143,333 @@ curl -X POST http://localhost:3000/ \
     "https://example.com/file1.pdf",
     "https://example.com/file2.pdf"
   ]
-}'
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `title` | string | Yes | Title of the merged PDF |
+| `author` | string | No | Author metadata |
+| `subject` | string | No | Subject metadata |
+| `keywords` | string[] | No | Keywords metadata |
+| `sources` | string[] | Yes | URLs of PDFs to merge |
+
+**Response:** Binary PDF file download
+
+**Features:**
+- Parallel downloads while preserving original order
+- Graceful handling of partial failures (skips failed downloads)
+- Automatic retry: 3 attempts with 5-second delay
+- Analytics recording for each download
+
+**Example with curl:**
+
+```bash
+curl -X POST http://localhost:3000/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "merged-document",
+    "author": "John Doe",
+    "sources": [
+      "https://example.com/file1.pdf",
+      "https://example.com/file2.pdf"
+    ]
+  }' \
+  --output merged.pdf
 ```
 
 #### GET /health
 
-Check the health status of the server.
+Health check endpoint.
 
-- **Response**: A simple message indicating the server is healthy.
+**Response:** `Server is healthy`
+
+### Analytics API
+
+All analytics endpoints require authentication via `X-API-Token` header.
+
+```bash
+curl -H "X-API-Token: your-token-here" http://localhost:3000/api/analytics/overview
+```
+
+#### GET /api/analytics/health
+
+Check database connectivity.
+
+#### GET /api/analytics/overview
+
+Get status code distribution and total request count.
+
+**Response:**
+
+```json
+{
+  "statusCodes": {
+    "success": 150,
+    "redirect": 5,
+    "clientError": 10,
+    "serverError": 2
+  },
+  "total": 167
+}
+```
+
+#### GET /api/analytics/top-urls
+
+Get most accessed PDF URLs.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | number | 25 | Maximum URLs to return |
+
+**Response:**
+
+```json
+[
+  {
+    "url": "https://example.com/doc.pdf",
+    "count": 45,
+    "successRate": 0.95,
+    "firstAccess": "2024-01-01T00:00:00Z",
+    "lastAccess": "2024-01-15T12:00:00Z"
+  }
+]
+```
+
+#### GET /api/analytics/errors
+
+Get error tracking information.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | number | 50 | Maximum errors to return |
+| `groupBy` | string | - | Group by `url` (optional) |
+
+#### GET /api/analytics/downloads
+
+Get paginated download history with filtering.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `page` | number | 1 | Page number |
+| `pageSize` | number | 25 | Items per page |
+| `sortBy` | string | `timestamp` | Sort field |
+| `sortOrder` | string | `desc` | `asc` or `desc` |
+| `search` | string | - | Filter by URL |
+| `statusCode` | number | - | Filter by status code |
+| `statusRange` | string | - | `success`, `redirect`, `clientError`, `serverError` |
+| `dateFrom` | string | - | ISO date filter |
+| `dateTo` | string | - | ISO date filter |
+
+#### GET /api/analytics/chart-data
+
+Get time-series data for charts.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `groupBy` | string | `week` | `hour`, `day`, `week`, `month` |
+
+#### GET /api/analytics/processing/overview
+
+Get PDF processing statistics.
+
+**Response:**
+
+```json
+{
+  "totalProcessed": 500,
+  "successRate": 0.98,
+  "avgProcessingTime": 1250,
+  "errorsByType": {
+    "ENCRYPTED": 5,
+    "CORRUPTED": 3
+  }
+}
+```
+
+#### GET /api/analytics/processing/errors
+
+Get PDF processing errors.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | number | 50 | Maximum errors to return |
+
+## Analytics Dashboard
+
+Access the web-based dashboard at `http://localhost:3000/dashboard`
+
+**Authentication:**
+- Enter your `ANALYTICS_API_TOKEN` in the login page
+- Development default: `dev-token-change-me-in-production-min32chars`
+
+**Dashboard Tabs:**
+- **Overview**: Download statistics by status code
+- **Top URLs**: Most accessed PDF URLs with success rates
+- **Error Tracking**: Failed downloads and error messages
+- **Processing**: PDF processing metrics and errors
+
+## Database Configuration
+
+### SQLite (Default)
+
+No additional setup required. Database file created at `./database/analytics.db`.
+
+```bash
+DATABASE_PROVIDER=sqlite
+DATABASE_URL="file:../database/analytics.db"
+```
+
+### PostgreSQL
+
+```bash
+DATABASE_PROVIDER=postgresql
+DATABASE_URL="postgresql://user:password@localhost:5432/analytics?schema=public"
+```
+
+Setup:
+
+```bash
+# Create the database
+createdb analytics
+
+# Apply schema directly (recommended for any provider)
+bunx prisma db push
+```
+
+### MySQL
+
+```bash
+DATABASE_PROVIDER=mysql
+DATABASE_URL="mysql://user:password@localhost:3306/analytics"
+```
+
+Setup:
+
+```sql
+CREATE DATABASE analytics;
+```
+
+```bash
+# Apply schema directly (recommended for any provider)
+bunx prisma db push
+```
+
+### Switching Database Providers
+
+This project uses `prisma db push` for schema synchronization, which works seamlessly across all providers without provider-specific migration files.
+
+**For local development with a different provider:**
+
+```bash
+# 1. Update .env with new provider and DATABASE_URL
+DATABASE_PROVIDER=postgresql
+DATABASE_URL="postgresql://user:password@localhost:5432/analytics"
+
+# 2. Update the schema provider
+sed -i '' 's/provider = "sqlite"/provider = "postgresql"/' prisma/schema.prisma
+
+# 3. Apply schema to new database
+bunx prisma db push
+```
+
+**Note:** If migrating data from one provider to another, you'll need to export and reimport the data manually.
 
 ## CLI Usage
 
-The project includes a command-line interface for merging PDFs directly from your terminal.
-
-### Running the CLI
-
-#### Using Bun directly
+The CLI tool merges PDFs from local files or directories.
 
 ```bash
-# Build the project first
+# Build first
 bun run build
 
-# Run the CLI
+# Merge PDFs
 bun cli <input_file_or_directory> [output.pdf]
 ```
 
-#### Using Docker
+### Examples
 
 ```bash
-# Build the Docker image
-docker build -t merger-pdf .
+# Merge all PDFs in a directory
+bun cli ./pdfs merged-output.pdf
 
-# Run the CLI using the helper command
-docker run -v $(pwd):/data merger-pdf merge-pdf /data/input /data/output.pdf
+# Merge a single PDF (useful for validation)
+bun cli ./document.pdf output.pdf
+
+# Auto-generate output filename (UUID-based)
+bun cli ./pdfs
 ```
+
+### CLI Arguments
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `input` | Yes | Path to PDF file or directory |
+| `output` | No | Output filename (auto-generated if omitted) |
 
 ## Docker Deployment
 
-### Environment Variables in Docker
-
-**Important:** Environment variables like `ANALYTICS_API_TOKEN` should be passed at **runtime** using `docker run --env` or `--env-file`, not baked into the image during build.
-
-This is because:
-- 🔒 **Security**: Tokens should not be committed to images
-- 🔄 **Flexibility**: Same image can be used in different environments
-- ✅ **Validation**: Zod validates env vars when the container starts
-
-The Dockerfile uses `SKIP_ENV_VALIDATION=true` during the build process since environment variables are not yet available. Validation happens when you start the container.
-
-### Running the API Server with Docker
-
-To run the API server with analytics support, use the `DB_PROVIDER` build argument to select your database:
+### Building Images
 
 ```bash
-# Build for SQLite (default)
+# SQLite (default)
 docker build -f docker/Dockerfile -t merger-pdf .
-# Or explicitly:
-docker build -f docker/Dockerfile --build-arg DB_PROVIDER=sqlite -t merger-pdf .
 
-# Build for PostgreSQL
+# PostgreSQL
 docker build -f docker/Dockerfile --build-arg DB_PROVIDER=postgresql -t merger-pdf:postgres .
 
-# Build for MySQL
+# MySQL
 docker build -f docker/Dockerfile --build-arg DB_PROVIDER=mysql -t merger-pdf:mysql .
 ```
 
-**Running with SQLite:**
+### Build Arguments
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `DB_PROVIDER` | `sqlite` | Database provider |
+| `DATABASE_URL` | `file:../database/analytics.db` | Database connection string |
+| `REQUEST_TIMEOUT` | `30000` | Request timeout (ms) |
+| `NODE_TLS_REJECT_UNAUTHORIZED` | `1` | SSL validation |
+
+### Running Containers
+
+**SQLite:**
 
 ```bash
 docker run -d \
   -p 3000:3000 \
-  -v $(pwd)/prisma:/app/prisma \
-  -e DATABASE_URL="file:./prisma/analytics.db" \
-  -e ANALYTICS_API_TOKEN="your-secure-token-here" \
-  -e REQUEST_TIMEOUT=30000 \
+  -v $(pwd)/database:/app/database \
+  -e DATABASE_URL="file:../database/analytics.db" \
+  -e ANALYTICS_API_TOKEN="your-secure-token-here-min-32-chars" \
   --name merger-pdf-api \
   merger-pdf
 ```
 
-**Running with PostgreSQL:**
+**PostgreSQL:**
 
 ```bash
 docker run -d \
   -p 3000:3000 \
   -e DATABASE_URL="postgresql://user:password@host.docker.internal:5432/analytics" \
-  -e ANALYTICS_API_TOKEN="your-secure-token-here" \
+  -e ANALYTICS_API_TOKEN="your-secure-token-here-min-32-chars" \
   --name merger-pdf-api \
   merger-pdf:postgres
 ```
 
-**Running with MySQL:**
+**MySQL:**
 
 ```bash
 docker run -d \
   -p 3000:3000 \
   -e DATABASE_URL="mysql://user:password@host.docker.internal:3306/analytics" \
-  -e ANALYTICS_API_TOKEN="your-secure-token-here" \
+  -e ANALYTICS_API_TOKEN="your-secure-token-here-min-32-chars" \
   --name merger-pdf-api \
   merger-pdf:mysql
 ```
 
-> **Note**: Database migrations run automatically when the container starts. No manual migration steps needed!
+### Docker Compose
 
-### Important Docker Considerations
-
-1. **Automatic Migrations**:
-   - Database migrations run automatically on container startup
-   - No manual steps required - just start the container!
-
-2. **Database Volume Mapping** (SQLite only):
-   - Map `./prisma` to `/app/prisma` to persist the SQLite database
-   - Without this, analytics data will be lost when the container restarts
-   - Not needed for PostgreSQL/MySQL (data is in external database)
-
-3. **Environment Variables**:
-   - `DATABASE_URL`: Database connection string (required)
-   - `ANALYTICS_API_TOKEN`: Auth token (default: `dev-token-change-me-in-production-min32chars`)
-   - `REQUEST_TIMEOUT`: PDF download timeout in ms (default: 30000)
-
-4. **Quick Restart** (your example):
-
-   ```bash
-   docker stop merger-pdf && \
-   docker rm merger-pdf && \
-   docker run -d \
-     --name merger-pdf \
-     -p 3333:3000 \
-     --log-opt max-size=10m \
-     aguinaldotupy/merger-pdf:v3.0.1
-   ```
-
-   Migrations will run automatically on startup! ✅
-
-### Docker Compose Examples
-
-**SQLite (default):**
+**SQLite:**
 
 ```yaml
 version: '3.8'
@@ -336,16 +478,13 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-      args:
-        DB_PROVIDER: sqlite
     ports:
       - "3000:3000"
     volumes:
-      - ./prisma:/app/prisma
+      - ./database:/app/database
     environment:
-      - DATABASE_URL=file:./prisma/analytics.db
-      - ANALYTICS_API_TOKEN=your-secure-token-here
-      - REQUEST_TIMEOUT=30000
+      - DATABASE_URL=file:../database/analytics.db
+      - ANALYTICS_API_TOKEN=your-secure-token-here-min-32-chars
     restart: unless-stopped
 ```
 
@@ -374,8 +513,7 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=postgresql://merger:secure-password@postgres:5432/analytics
-      - ANALYTICS_API_TOKEN=your-secure-token-here
-      - REQUEST_TIMEOUT=30000
+      - ANALYTICS_API_TOKEN=your-secure-token-here-min-32-chars
     depends_on:
       - postgres
     restart: unless-stopped
@@ -384,44 +522,99 @@ volumes:
   postgres_data:
 ```
 
-### CLI Examples
-
-**Merge all PDFs in a directory:**
+### Docker CLI
 
 ```bash
-# Using Bun
-bun cli ./pdfs merged-output.pdf
-
-# Using Docker
-docker run -v $(pwd):/data merger-pdf merge-pdf /data/pdfs /data/merged-output.pdf
+# Using Docker for CLI
+docker run -v $(pwd):/data merger-pdf merge-pdf /data/input /data/output.pdf
 ```
 
-**Merge a single PDF file:**
+### Important Notes
+
+1. **Automatic Schema Sync**: Database schema is applied automatically on container startup using `prisma db push`
+2. **Volume Mapping**: Mount `/app/database` for SQLite persistence
+3. **Environment Variables**: Pass at runtime, not during build (security)
+4. **Quick Restart**:
+
+   ```bash
+   docker stop merger-pdf && docker rm merger-pdf && \
+   docker run -d --name merger-pdf -p 3000:3000 merger-pdf
+   ```
+
+## Troubleshooting
+
+### Common Issues
+
+**SSL Certificate Errors:**
 
 ```bash
-# Using Bun
-bun cli ./document.pdf output.pdf
-
-# Using Docker
-docker run -v $(pwd):/data merger-pdf merge-pdf /data/document.pdf /data/output.pdf
+# For self-signed certificates in development
+NODE_TLS_REJECT_UNAUTHORIZED=0 bun start
 ```
 
-**Auto-generate output filename:**
+**Database Connection Issues:**
 
 ```bash
-# If you don't specify an output filename, a UUID-based name will be generated
-bun cli ./pdfs
+# Verify database file exists (SQLite)
+ls -la database/analytics.db
+
+# Check Prisma client
+bun run prisma:generate
 ```
 
-### CLI Arguments
+**PDF Download Timeouts:**
 
-- `<input_file_or_directory>` (required): Path to a PDF file or directory containing PDF files
-- `[output.pdf]` (optional): Output filename. If not provided, a UUID-based filename will be generated
+```bash
+# Increase timeout (default: 10000ms)
+REQUEST_TIMEOUT=30000 bun start
+```
+
+**Encrypted PDFs:**
+
+The application handles encrypted PDFs with `ignoreEncryption: true`. If issues persist, the PDF may be corrupted.
+
+**Docker Schema Errors:**
+
+```bash
+# Rebuild with fresh schema
+docker build --no-cache -f docker/Dockerfile -t merger-pdf .
+```
+
+### Retry Behavior
+
+Failed PDF downloads are automatically retried:
+- **Attempts**: 3 total
+- **Delay**: 5 seconds between attempts
+- **Triggers**: Network errors, 5xx status codes
+
+### Analytics Not Recording
+
+1. Verify database connection: `GET /api/analytics/health`
+2. Check `DATABASE_URL` configuration
+3. Ensure schema is applied: `bunx prisma db push`
 
 ## Error Handling
 
-- The API returns a 400 status code for invalid request bodies.
-- A 500 status code is returned for internal server errors.
+| Status Code | Description |
+|-------------|-------------|
+| `400` | Invalid request body (missing required fields) |
+| `401` | Unauthorized (invalid or missing API token) |
+| `500` | Internal server error |
+
+## Security Considerations
+
+- **API Token**: Use a strong, unique token (minimum 32 characters)
+- **SSL/TLS**: Keep `NODE_TLS_REJECT_UNAUTHORIZED=1` in production
+- **Database**: Use strong passwords and network isolation
+- **Docker**: Never bake secrets into images; use runtime environment variables
+
+## Performance
+
+- **Parallel Downloads**: PDFs are downloaded concurrently
+- **Order Preservation**: Original source order maintained despite parallel processing
+- **SQLite WAL Mode**: Better concurrency for read-heavy workloads
+- **Indexed Queries**: Database indexes on frequently queried columns
+- **Graceful Degradation**: Failed downloads don't crash the entire merge
 
 ## License
 
@@ -430,3 +623,34 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
+
+### Development Setup
+
+```bash
+# Install dependencies
+bun install
+
+# Set up database
+bun run prisma:generate
+bun run prisma:migrate
+
+# Start development server
+bun start
+
+# Run linter
+bun run lint:fix
+```
+
+### Commit Convention
+
+This project uses [Angular commit convention](https://github.com/angular/angular/blob/main/CONTRIBUTING.md#commit):
+
+- `feat:` New feature (minor version)
+- `fix:` Bug fix (patch version)
+- `refactor:` Code refactoring (patch version)
+- `style:` Code style changes (patch version)
+- `docs:` Documentation only
+- `test:` Adding tests
+- `chore:` Maintenance tasks
+
+Breaking changes: Add `!` after type (e.g., `feat!:`) for major version bump.
