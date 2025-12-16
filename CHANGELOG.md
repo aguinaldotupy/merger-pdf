@@ -1,3 +1,10 @@
+# [4.9.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.8.0...v4.9.0) (2025-12-16)
+
+
+### Features
+
+* add automatic image-to-PDF conversion for PNG/JPEG ([1666d95](https://github.com/aguinaldotupy/merger-pdf/commit/1666d952183ffc8480a4fa4b5a573cde47bddeed))
+
 # [4.8.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.7.1...v4.8.0) (2025-12-16)
 
 

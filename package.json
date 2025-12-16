@@ -1,6 +1,6 @@
 {
 	"name": "merger-pdf",
-	"version": "4.8.0",
+	"version": "4.9.0",
 	"main": "index.js",
 	"license": "MIT",
 	"scripts": {
