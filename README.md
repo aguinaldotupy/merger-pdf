@@ -5,6 +5,7 @@ A high-performance TypeScript application that provides both an HTTP API and CLI
 ## Features
 
 - **PDF Merging**: Merge multiple PDF files into a single document
+- **Image Support**: Automatically convert PNG/JPEG images to PDF pages (A4 format, centered, white background)
 - **Batch Processing**: Async batch processing with webhook notifications
 - **App Token Management**: Secure API tokens for batch operations
 - **Metadata Support**: Set title, author, subject, and keywords for merged PDFs
@@ -902,6 +903,50 @@ docker run -v $(pwd):/data merger-pdf merge-pdf /data/input /data/output.pdf
    docker stop merger-pdf && docker rm merger-pdf && \
    docker run -d --name merger-pdf -p 3000:3000 merger-pdf
    ```
+
+## Image Support
+
+The API automatically detects and converts images (PNG, JPEG) to PDF pages when they are included in merge requests.
+
+### How It Works
+
+- **Automatic Detection**: Uses the `file-type` library to detect file format from magic bytes
+- **Supported Formats**: PNG, JPEG/JPG
+- **A4 Format**: Images are placed on A4-sized pages
+- **Orientation**: Portrait or landscape is chosen automatically based on image dimensions
+- **Centering**: Images are centered on the page with margins (~14mm)
+- **White Background**: Pages have a white background
+- **Proportional Scaling**: Images are scaled to fit while maintaining aspect ratio (never scaled up)
+
+### Example
+
+When you send an image URL in the `sources` array, it will be automatically converted:
+
+```bash
+curl -X POST http://localhost:3000/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "mixed-document",
+    "sources": [
+      "https://example.com/document.pdf",
+      "https://example.com/photo.jpg",
+      "https://example.com/diagram.png"
+    ]
+  }' \
+  --output mixed.pdf
+```
+
+This will create a PDF with:
+- Page 1: Content from `document.pdf`
+- Page 2: `photo.jpg` converted to A4 PDF (orientation based on image dimensions)
+- Page 3: `diagram.png` converted to A4 PDF
+
+### A4 Dimensions
+
+| Orientation | Width | Height |
+|-------------|-------|--------|
+| Portrait | 595.28 pts (210mm) | 841.89 pts (297mm) |
+| Landscape | 841.89 pts (297mm) | 595.28 pts (210mm) |
 
 ## Troubleshooting
 
