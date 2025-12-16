@@ -41,11 +41,8 @@ A high-performance TypeScript application that provides both an HTTP API and CLI
    # Generate Prisma client
    bun run prisma:generate
 
-   # Run migrations (development)
-   bun run prisma:migrate
-
-   # Deploy migrations (production)
-   bun run prisma:deploy
+   # Apply database schema
+   bun run prisma:push
    ```
 
 4. Configure environment variables:
@@ -119,8 +116,7 @@ The server runs on port 3000 by default: `http://localhost:3000`
 | `bun run lint` | Lint code with Biome (--write --unsafe) |
 | `bun run lint:fix` | Fix lint issues (--write only) |
 | `bun run prisma:generate` | Generate Prisma client |
-| `bun run prisma:migrate` | Run migrations (interactive) |
-| `bun run prisma:deploy` | Deploy migrations (production) |
+| `bun run prisma:push` | Apply database schema |
 | `bun run release` | Run semantic-release |
 
 ## API Endpoints
@@ -632,7 +628,7 @@ bun install
 
 # Set up database
 bun run prisma:generate
-bun run prisma:migrate
+bun run prisma:push
 
 # Start development server
 bun start
