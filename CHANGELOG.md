@@ -1,3 +1,10 @@
+## [4.10.1](https://github.com/aguinaldotupy/merger-pdf/compare/v4.10.0...v4.10.1) (2026-01-13)
+
+
+### Bug Fixes
+
+* **dashboard:** add clickable URLs to all dashboard tables ([1ad2949](https://github.com/aguinaldotupy/merger-pdf/commit/1ad29498961d8f9d54acf6f7af5b643606e82d12))
+
 # [4.10.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.9.1...v4.10.0) (2026-01-13)
 
 
