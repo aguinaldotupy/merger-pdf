@@ -502,10 +502,15 @@ const App = {
 				}
 
 				const escapedUrl = this.escapeHtml(item.url);
+				const isValidUrl = this.isValidHttpUrl(item.url);
+				const urlContent = isValidUrl
+					? `<a href="${escapedUrl}" target="_blank" rel="noopener noreferrer" class="font-mono url-link">${escapedUrl}</a>`
+					: `<span class="font-mono">${escapedUrl}</span>`;
+
 				return `
 				<tr>
-					<td class="truncate" style="max-width: 300px;" title="${escapedUrl}">
-						<span class="font-mono">${escapedUrl}</span>
+					<td class="url-cell">
+						${urlContent}
 					</td>
 					<td class="text-right"><strong>${item.accessCount.toLocaleString()}</strong></td>
 					<td class="text-right" style="color: #22c55e;">${item.successCount.toLocaleString()}</td>
@@ -694,6 +699,10 @@ const App = {
 				}
 
 				const escapedUrl = this.escapeHtml(item.url);
+				const isValidUrl = this.isValidHttpUrl(item.url);
+				const urlContent = isValidUrl
+					? `<a href="${escapedUrl}" target="_blank" rel="noopener noreferrer" class="font-mono url-link">${escapedUrl}</a>`
+					: `<span class="font-mono">${escapedUrl}</span>`;
 				const userAgent = item.userAgent || "-";
 				const truncatedUserAgent =
 					userAgent.length > 50
@@ -716,8 +725,8 @@ const App = {
 					<td style="font-size: 0.875rem; white-space: nowrap;">
 						${new Date(item.timestamp).toLocaleString("pt-BR")}
 					</td>
-					<td class="truncate" style="max-width: 300px;" title="${escapedUrl}">
-						<span class="font-mono">${escapedUrl}</span>
+					<td class="url-cell">
+						${urlContent}
 					</td>
 					<td class="text-center">
 						<span class="badge ${badgeClass}">
@@ -840,6 +849,10 @@ const App = {
 		tbody.innerHTML = errors
 			.map((item) => {
 				const escapedUrl = this.escapeHtml(item.url);
+				const isValidUrl = this.isValidHttpUrl(item.url);
+				const urlContent = isValidUrl
+					? `<a href="${escapedUrl}" target="_blank" rel="noopener noreferrer" class="font-mono url-link">${escapedUrl}</a>`
+					: `<span class="font-mono">${escapedUrl}</span>`;
 				const errorType = item.errorType || "-";
 				const rawErrorMessage = item.errorMessage || "";
 				const escapedErrorMessage = rawErrorMessage
@@ -854,13 +867,13 @@ const App = {
 					<td style="font-size: 0.875rem; white-space: nowrap;">
 						${new Date(item.timestamp).toLocaleString("pt-BR")}
 					</td>
-					<td class="truncate" style="max-width: 250px;" title="${escapedUrl}">
-						<span class="font-mono">${escapedUrl}</span>
+					<td class="url-cell">
+						${urlContent}
 					</td>
 					<td>
 						<span class="badge badge-error">${this.escapeHtml(errorType)}</span>
 					</td>
-					<td class="truncate" style="max-width: 350px;" title="${this.escapeHtml(rawErrorMessage || "Sem mensagem")}">
+					<td class="error-message-cell">
 						${escapedErrorMessage}
 					</td>
 					<td class="text-right">${processingTime}</td>
