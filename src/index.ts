@@ -36,6 +36,23 @@ interface MergeRequest {
 	subject: string | null;
 	keywords: string[] | null;
 	sources: string[];
+	concurrency?: number;
+}
+
+// Default and max concurrency limits
+const DEFAULT_CONCURRENCY = 1;
+const MAX_CONCURRENCY = 20;
+
+// Lazy-load and cache p-limit (ESM-only module)
+type PLimitFunction = (
+	concurrency: number,
+) => <T>(fn: () => Promise<T>) => Promise<T>;
+let pLimitCache: PLimitFunction | null = null;
+async function getPLimit(): Promise<PLimitFunction> {
+	if (!pLimitCache) {
+		pLimitCache = (await import("p-limit")).default;
+	}
+	return pLimitCache;
 }
 
 /**
@@ -59,11 +76,22 @@ function extractAppToken(req: Request): string | null {
 }
 
 app.post("/", async (req: Request, res: Response) => {
-	const { title, sources, author, subject, keywords } =
+	const { title, sources, author, subject, keywords, concurrency } =
 		req.body as MergeRequest;
 
 	if (!title || !sources || !Array.isArray(sources)) {
 		return res.status(400).send("Invalid request body");
+	}
+
+	// Validate concurrency parameter if provided
+	if (concurrency !== undefined && concurrency !== null) {
+		const parsedConcurrency = Number(concurrency);
+		if (!Number.isInteger(parsedConcurrency) || parsedConcurrency < 1) {
+			return res.status(400).send({
+				message:
+					"Invalid concurrency value. Must be a positive integer between 1 and 20.",
+			});
+		}
 	}
 
 	try {
@@ -89,61 +117,71 @@ app.post("/", async (req: Request, res: Response) => {
 			keywords: keywords || undefined,
 		});
 
-		// Download all PDFs in parallel while preserving order
-		// Strategy: Download concurrently but add to merger sequentially in original order
+		// Calculate concurrency limit (default: 5, max: 20)
+		const concurrencyLimit = Math.min(
+			Math.max(1, Number(concurrency) || DEFAULT_CONCURRENCY),
+			MAX_CONCURRENCY,
+		);
+		const pLimit = await getPLimit();
+		const limit = pLimit(concurrencyLimit);
+
+		// Download PDFs with controlled concurrency while preserving order
+		// Strategy: Download with limited concurrency but add to merger sequentially in original order
 		const downloadResults = await Promise.all(
-			sources.map(async (source, index) => {
-				const startTime = Date.now();
-				try {
-					// Download PDF buffer
-					const { data } = await axios.get(source, {
-						responseType: "arraybuffer",
-						timeout: env.REQUEST_TIMEOUT,
-					});
-
-					// Record successful download analytics
-					const responseTime = Date.now() - startTime;
-					analyticsService
-						.recordDownloadEvent({
-							url: source,
-							statusCode: 200,
-							timestamp: new Date(),
-							userAgent: req.get("user-agent"),
-							responseTime,
-							appId,
-						})
-						.catch((error) => {
-							console.error("Analytics recording failed:", error);
+			sources.map((source, index) =>
+				limit(async () => {
+					const startTime = Date.now();
+					try {
+						// Download PDF buffer
+						const { data } = await axios.get(source, {
+							responseType: "arraybuffer",
+							timeout: env.REQUEST_TIMEOUT,
 						});
 
-					return { index, buffer: data, url: source, success: true };
-				} catch (error) {
-					// Record failed download analytics
-					const responseTime = Date.now() - startTime;
-					const statusCode = axios.isAxiosError(error)
-						? error.response?.status || 500
-						: 500;
-					const errorMessage =
-						error instanceof Error ? error.message : "Unknown error";
+						// Record successful download analytics
+						const responseTime = Date.now() - startTime;
+						analyticsService
+							.recordDownloadEvent({
+								url: source,
+								statusCode: 200,
+								timestamp: new Date(),
+								userAgent: req.get("user-agent"),
+								responseTime,
+								appId,
+							})
+							.catch((error) => {
+								console.error("Analytics recording failed:", error);
+							});
 
-					analyticsService
-						.recordDownloadEvent({
-							url: source,
-							statusCode,
-							timestamp: new Date(),
-							userAgent: req.get("user-agent"),
-							responseTime,
-							errorMessage,
-							appId,
-						})
-						.catch((analyticsError) => {
-							console.error("Analytics recording failed:", analyticsError);
-						});
+						return { index, buffer: data, url: source, success: true };
+					} catch (error) {
+						// Record failed download analytics
+						const responseTime = Date.now() - startTime;
+						const statusCode = axios.isAxiosError(error)
+							? error.response?.status || 500
+							: 500;
+						const errorMessage =
+							error instanceof Error ? error.message : "Unknown error";
 
-					console.error(`Error downloading PDF from ${source}:`, error);
-					return { index, error, url: source, success: false };
-				}
-			}),
+						analyticsService
+							.recordDownloadEvent({
+								url: source,
+								statusCode,
+								timestamp: new Date(),
+								userAgent: req.get("user-agent"),
+								responseTime,
+								errorMessage,
+								appId,
+							})
+							.catch((analyticsError) => {
+								console.error("Analytics recording failed:", analyticsError);
+							});
+
+						console.error(`Error downloading PDF from ${source}:`, error);
+						return { index, error, url: source, success: false };
+					}
+				}),
+			),
 		);
 
 		// Add PDFs to merger in original order (sorted by index)
