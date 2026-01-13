@@ -103,14 +103,6 @@ export class PDFMerger {
 	}
 
 	/**
-	 * Checks if buffer is a PDF
-	 */
-	private async isPdfBuffer(buffer: ArrayBuffer | Uint8Array): Promise<boolean> {
-		const fileType = await this.detectFileType(buffer);
-		return fileType?.mime === "application/pdf";
-	}
-
-	/**
 	 * Converts an image buffer to a PDF page with the image centered on A4
 	 * Automatically chooses portrait or landscape based on image dimensions
 	 */
@@ -373,7 +365,10 @@ export class PDFMerger {
 		const pdfBuffer = await this.convertImageToPdf(buffer, fileType.mime);
 
 		const pdfDoc = await PDFDocument.load(pdfBuffer);
-		const pages = await this.mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+		const pages = await this.mergedPdf.copyPages(
+			pdfDoc,
+			pdfDoc.getPageIndices(),
+		);
 		for (const page of pages) {
 			this.mergedPdf.addPage(page);
 		}

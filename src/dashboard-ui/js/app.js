@@ -478,6 +478,15 @@ const App = {
 		return div.innerHTML;
 	},
 
+	isValidHttpUrl(url) {
+		try {
+			const parsed = new URL(url);
+			return ["http:", "https:"].includes(parsed.protocol);
+		} catch {
+			return false;
+		}
+	},
+
 	renderTopUrls(data) {
 		const tbody = document.getElementById("urls-tbody");
 		tbody.innerHTML = data
@@ -561,25 +570,31 @@ const App = {
 				}
 
 				const escapedUrl = this.escapeHtml(item.url);
+				const isValidUrl = this.isValidHttpUrl(item.url);
 				const rawErrorMessage = item.errorMessage || "";
 				const escapedErrorMessage = rawErrorMessage
 					? this.escapeHtml(rawErrorMessage)
 					: '<em style="color: hsl(var(--muted-foreground));">Sem mensagem de erro</em>';
+
+				// Only render clickable link for valid http/https URLs (prevents XSS via javascript: protocol)
+				const urlContent = isValidUrl
+					? `<a href="${escapedUrl}" target="_blank" rel="noopener noreferrer" class="font-mono url-link">${escapedUrl}</a>`
+					: `<span class="font-mono">${escapedUrl}</span>`;
 
 				return `
 				<tr>
 					<td style="font-size: 0.875rem; white-space: nowrap;">
 						${new Date(item.timestamp).toLocaleString("pt-BR")}
 					</td>
-					<td class="truncate" style="max-width: 300px;" title="${escapedUrl}">
-						<span class="font-mono">${escapedUrl}</span>
+					<td class="url-cell">
+						${urlContent}
 					</td>
 					<td class="text-center">
 						<span class="badge ${badgeClass}" title="${badgeLabel}">
 							${statusCode}
 						</span>
 					</td>
-					<td class="truncate" style="max-width: 400px;" title="${this.escapeHtml(rawErrorMessage || "Sem mensagem")}">
+					<td class="error-message-cell">
 						${escapedErrorMessage}
 					</td>
 				</tr>

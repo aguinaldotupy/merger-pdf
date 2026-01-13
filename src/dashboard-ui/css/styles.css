@@ -538,6 +538,37 @@ tbody td {
 	white-space: nowrap;
 }
 
+/* URL cell with word wrap for errors table */
+.url-cell {
+	max-width: 400px;
+	word-wrap: break-word;
+	word-break: break-all;
+	white-space: normal;
+}
+
+.url-link {
+	color: hsl(var(--primary));
+	text-decoration: none;
+	transition: color 0.2s;
+}
+
+.url-link:hover {
+	color: hsl(var(--primary) / 0.8);
+	text-decoration: underline;
+}
+
+.url-link:visited {
+	color: hsl(270 50% 50%);
+}
+
+/* Error message cell with word wrap */
+.error-message-cell {
+	max-width: 400px;
+	word-wrap: break-word;
+	word-break: break-word;
+	white-space: normal;
+}
+
 .flex-wrap {
 	flex-wrap: wrap;
 }
