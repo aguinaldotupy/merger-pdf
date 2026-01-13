@@ -1,3 +1,15 @@
+# [4.10.0](https://github.com/aguinaldotupy/merger-pdf/compare/v4.9.1...v4.10.0) (2026-01-13)
+
+
+### Bug Fixes
+
+* **dashboard:** make error URLs clickable with word-wrap and XSS protection ([e3969d1](https://github.com/aguinaldotupy/merger-pdf/commit/e3969d121011d605821ca1e10e7d3322b8fd7709))
+
+
+### Features
+
+* **api:** add configurable concurrency for PDF downloads ([f41803d](https://github.com/aguinaldotupy/merger-pdf/commit/f41803dad82735baaf5960ab3bfb00160da826d6))
+
 ## [4.9.1](https://github.com/aguinaldotupy/merger-pdf/compare/v4.9.0...v4.9.1) (2025-12-16)
 
 
