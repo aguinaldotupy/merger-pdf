@@ -19,8 +19,8 @@ fi
 
 # Apply database schema (works for all providers without provider-specific migrations)
 echo "📦 Applying database schema..."
-bunx prisma db push --skip-generate
+bun run prisma db push --skip-generate
 
 # Start the application
 echo "✅ Schema applied. Starting server..."
-exec bun run serve
+exec bun dist/index.js

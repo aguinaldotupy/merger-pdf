@@ -104,13 +104,17 @@ bun run release  # Uses semantic-release
   - Set to "0" to disable SSL certificate validation (use only for development/trusted URLs)
   - Set to "1" or omit for production (enables full SSL validation)
 
+
 ## Docker
 
-The Dockerfile uses Bun runtime:
-- Base image: `oven/bun:1.1.45-alpine`
-- Builds TypeScript to JavaScript during image build
-- Provides CLI wrapper at `/usr/local/bin/merge-pdf`
+`docker/Dockerfile` is a two-stage build on `oven/bun:1.4.4-alpine`:
+- `builder`: installs all dependencies, runs `docker/setup-prisma-provider.sh` for the `DB_PROVIDER` build arg, generates the Prisma client and compiles TypeScript
+- `runtime`: `bun install --frozen-lockfile --production --omit=peer` plus `dist/`, the generated client (`node_modules/.prisma`), the provider-adjusted `prisma/` schema and `src/dashboard-ui`; semantic-release, biome, typescript and ts-node are not in the image
+- `prisma` (CLI) is a runtime dependency because `docker-entrypoint.sh` runs `prisma db push --skip-generate` on start-up
+- Runs as the unprivileged `bun` user (uid 1000); only `/app/database` and `/app/batch-storage` are writable, merged PDFs go to the OS temp dir (`os.tmpdir()`)
+- Declares a `HEALTHCHECK` on `/health` and provides the CLI wrapper at `/usr/local/bin/merge-pdf`
 - Run CLI: `docker run -v $(pwd):/data merger-pdf merge-pdf /data/input /data/output.pdf`
+- `.github/workflows/docker-build-check.yml` builds the image on pull requests and smoke-tests it (health, non-root, no dev tooling, CLI and HTTP merge)
 
 ## TypeScript Configuration
 

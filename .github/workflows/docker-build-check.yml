@@ -1,0 +1,104 @@
+name: Docker image check
+
+on:
+  pull_request:
+    paths:
+      - "docker/**"
+      - "src/**"
+      - "prisma/**"
+      - "package.json"
+      - "bun.lock"
+      - "tsconfig.json"
+      - ".dockerignore"
+      - ".github/workflows/docker-build-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-smoke:
+    name: Build image and smoke test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (linux/amd64, not pushed)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: false
+          load: true
+          tags: merger-pdf:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start container (SQLite)
+        run: docker run -d --name merger-pdf -p 3000:3000 merger-pdf:ci
+
+      - name: Wait for /health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/health; then echo; exit 0; fi
+            sleep 2
+          done
+          echo "::error::server did not become healthy"
+          exit 1
+
+      - name: Runs as non-root
+        run: |
+          uid=$(docker exec merger-pdf id -u)
+          echo "uid=$uid"
+          test "$uid" != "0"
+
+      - name: No dev tooling in the runtime image
+        run: |
+          for p in typescript ts-node semantic-release @biomejs/biome @semantic-release/github; do
+            if docker exec merger-pdf test -e "/app/node_modules/$p"; then
+              echo "::error::$p is present in the runtime image"
+              exit 1
+            fi
+          done
+          echo "runtime node_modules contains no dev tooling"
+
+      - name: CLI merges a directory of PDFs
+        run: |
+          docker exec merger-pdf mkdir -p /tmp/in
+          docker exec merger-pdf bun -e '
+            const { PDFDocument } = require("pdf-lib");
+            const fs = require("fs");
+            for (const [name, pages] of [["a", 1], ["b", 2]]) {
+              const doc = await PDFDocument.create();
+              for (let i = 0; i < pages; i++) doc.addPage();
+              fs.writeFileSync(`/tmp/in/${name}.pdf`, await doc.save());
+            }'
+          docker exec merger-pdf merge-pdf /tmp/in /tmp/out.pdf
+          docker exec merger-pdf bun -e '
+            const { PDFDocument } = require("pdf-lib");
+            const d = await PDFDocument.load(require("fs").readFileSync("/tmp/out.pdf"));
+            console.log("merged pages:", d.getPageCount());
+            if (d.getPageCount() !== 3) process.exit(1);'
+
+      - name: API merges PDFs over HTTP
+        run: |
+          mkdir -p /tmp/pdfs
+          docker cp merger-pdf:/tmp/in/. /tmp/pdfs/
+          (cd /tmp/pdfs && python3 -m http.server 8000 --bind 0.0.0.0 >/dev/null 2>&1 &)
+          sleep 2
+          gw=$(docker network inspect bridge -f '{{(index .IPAM.Config 0).Gateway}}')
+          code=$(curl -sS -o /tmp/merged.pdf -w '%{http_code}' -X POST http://127.0.0.1:3000/ \
+            -H 'Content-Type: application/json' \
+            -d "{\"title\":\"ci\",\"sources\":[\"http://$gw:8000/a.pdf\",\"http://$gw:8000/b.pdf\"]}")
+          echo "status=$code"
+          test "$code" = "200"
+          head -c 5 /tmp/merged.pdf | grep -q '%PDF-'
+
+      - name: Container logs
+        if: always()
+        run: docker logs merger-pdf
