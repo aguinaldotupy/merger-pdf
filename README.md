@@ -19,8 +19,8 @@ A high-performance TypeScript application that provides both an HTTP API and CLI
 
 ## Prerequisites
 
-- [Bun](https://bun.sh) (version 1.1.45 or higher) - Preferred runtime
-- Node.js (version 20 or higher) - Alternative runtime
+- [Bun](https://bun.sh) (version 1.4.4 or higher) - Preferred runtime
+- Node.js (version 22.22.2 or higher) - Alternative runtime
 - SQLite, PostgreSQL, or MySQL (for analytics storage)
 
 ## Installation
