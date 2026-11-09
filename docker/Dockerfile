@@ -1,4 +1,4 @@
-FROM oven/bun:1.1.45-alpine
+FROM oven/bun:1.4.4-alpine
 
 ARG DB_PROVIDER=sqlite
 ARG DATABASE_URL="file:../database/analytics.db"
