@@ -1,3 +1,11 @@
+## [4.10.3](https://github.com/aguinaldotupy/merger-pdf/compare/v4.10.2...v4.10.3) (2026-11-09)
+
+
+### Bug Fixes
+
+* **deps:** upgrade vulnerable dependencies and migrate to text lockfile ([debda9a](https://github.com/aguinaldotupy/merger-pdf/commit/debda9a0726840969e3ad26cffce5c41785e1994))
+* **docker:** multi-stage image with production deps only, non-root user ([daf964f](https://github.com/aguinaldotupy/merger-pdf/commit/daf964fe1d4dd92c43164330f163fe66afbe5ac6))
+
 ## [4.10.2](https://github.com/aguinaldotupy/merger-pdf/compare/v4.10.1...v4.10.2) (2026-11-09)
 
 
