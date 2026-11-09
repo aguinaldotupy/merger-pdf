@@ -1,3 +1,10 @@
+## [4.10.2](https://github.com/aguinaldotupy/merger-pdf/compare/v4.10.1...v4.10.2) (2026-11-09)
+
+
+### Bug Fixes
+
+* **docker:** bump Bun to 1.4.4 and Node to 24.22.2 (Node2Shell, CVE-2026-111497) ([7c6163b](https://github.com/aguinaldotupy/merger-pdf/commit/7c6163be5bcc17fd6dba3179877efe7766cfc18a))
+
 ## [4.10.1](https://github.com/aguinaldotupy/merger-pdf/compare/v4.10.0...v4.10.1) (2026-01-13)
 
 
