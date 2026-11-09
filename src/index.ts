@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import axios from "axios";
 import express from "express";
@@ -253,7 +254,7 @@ app.post("/", async (req: Request, res: Response) => {
 		// Save the merged PDF to a file
 		const uuid = uuidv4();
 		const filename = `${toSlug(uuid)}.pdf`;
-		const outputPath = path.join(__dirname, filename);
+		const outputPath = path.join(os.tmpdir(), filename);
 
 		await merger.saveToFile(outputPath);
 

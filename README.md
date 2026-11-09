@@ -789,6 +789,14 @@ docker build -f docker/Dockerfile --build-arg DB_PROVIDER=mysql -t merger-pdf:my
 | `REQUEST_TIMEOUT` | `30000` | Request timeout (ms) |
 | `NODE_TLS_REJECT_UNAUTHORIZED` | `1` | SSL validation |
 
+### Runtime User and Volumes
+
+The image runs as the unprivileged `bun` user (uid 1000). Inside the image only `/app/database` and `/app/batch-storage` are writable; merged PDFs returned by `POST /` are written to the container's temp directory and removed after download. On Linux hosts, bind-mounted volumes must be writable by uid 1000:
+
+```bash
+mkdir -p database batch-storage && chown -R 1000:1000 database batch-storage
+```
+
 ### Running Containers
 
 **SQLite:**

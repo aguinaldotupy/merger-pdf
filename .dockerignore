@@ -44,3 +44,13 @@ specs/
 tmp/
 temp/
 *.tmp
+
+# Local state and tooling never needed in the image
+database/
+batch-storage/
+.github/
+.claude/
+.ai-memory.toml
+bun.lockb
+src/dashboard-ui/node_modules/
+src/dashboard-ui/dist/
